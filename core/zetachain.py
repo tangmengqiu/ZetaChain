@@ -7,9 +7,19 @@ import aiohttp
 import base64
 from data import abi
 
-
 # 0x48f80608B672DC30DC7e3dbBd0343c5F02C738Eb zeta bsc-bnb ZRC20 address
-#
+ZRC20_BNB_ADDR = "0x48f80608B672DC30DC7e3dbBd0343c5F02C738Eb"
+
+# 0x3C85e0cA1001F085A3e58d55A0D76E2E8B0A33f9 InvitationManager contract
+Invitation_Manager = "0x3C85e0cA1001F085A3e58d55A0D76E2E8B0A33f9"
+# izumi swap
+IZUMI_SWAP_CONTRACT = "0x34bc1b87f60e0a30c0e24FD7Abada70436c71406"
+
+# 0x2ca7d64A7EFE2D62A725E2B35Cf7230D6677FfEe uniswapV2Router02 address, https://www.zetachain.com/docs/reference/contracts/
+UNISWAP_V2_ROUTER02 = "0x2ca7d64A7EFE2D62A725E2B35Cf7230D6677FfEe"
+# 0x8Afb66B7ffA1936ec5914c7089D50542520208b8 SafeProxy
+SAFE_PROXY = "0x8Afb66B7ffA1936ec5914c7089D50542520208b8"
+
 
 class ZetaChain:
     def __init__(self, key: str, thread: int, proxy=None):
@@ -18,8 +28,8 @@ class ZetaChain:
         self.proxy = f"http://{proxy}" if proxy is not None else None
         self.thread = thread
 
-        self.contract_for_encoding = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address("0x8Afb66B7ffA1936ec5914c7089D50542520208b8"), abi=abi.encoding_contract_abi,)
-        self.main_contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address("0x34bc1b87f60e0a30c0e24FD7Abada70436c71406"), abi=abi.multicall_abi,)
+        self.contract_for_encoding = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address(SAFE_PROXY), abi=abi.encoding_contract_abi,)
+        self.main_contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address(IZUMI_SWAP_CONTRACT), abi=abi.multicall_abi,)
 
         headers = {
             "Accept": "application/json, text/plain, */*",
@@ -84,7 +94,7 @@ class ZetaChain:
         data = await self.get_referral_data()
         tx = {
             "from": self.web3_utils.acct.address,
-            "to": "0x3C85e0cA1001F085A3e58d55A0D76E2E8B0A33f9",
+            "to": Invitation_Manager,
             "value": 0,
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
             "gasPrice": self.web3_utils.w3.eth.gas_price,
@@ -117,7 +127,8 @@ class ZetaChain:
         wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
 
         return wait_tx.status == 1, transaction_hash
-
+    
+    # swap zeta to bnb
     async def transfer_bnb(self):
         encoded_data = self.contract_for_encoding.encodeABI(
             fn_name="swapAmount",
@@ -131,11 +142,12 @@ class ZetaChain:
                 )
             ],
         )
+        # 0x12210e8a whats this?
         tx_data = self.main_contract.encodeABI(fn_name="multicall", args=[[encoded_data, "0x12210e8a"]])
 
         tx = {
             "from": self.web3_utils.acct.address,
-            "to": self.web3_utils.w3.to_checksum_address("0x34bc1b87f60e0a30c0e24FD7Abada70436c71406"),
+            "to": self.web3_utils.w3.to_checksum_address(IZUMI_SWAP_CONTRACT),
             "value": self.web3_utils.w3.to_wei(config.SENDS_QUESTS['send_bnb'][1], "ether"),
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
             "gasPrice": self.web3_utils.w3.eth.gas_price,
@@ -166,7 +178,7 @@ class ZetaChain:
 
         tx = {
             "from": self.web3_utils.acct.address,
-            "to": self.web3_utils.w3.to_checksum_address("0x34bc1b87f60e0a30c0e24FD7Abada70436c71406"),
+            "to": self.web3_utils.w3.to_checksum_address(IZUMI_SWAP_CONTRACT),
             "value": self.web3_utils.w3.to_wei(config.SENDS_QUESTS['send_eth'][1], "ether"),
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
             "gasPrice": self.web3_utils.w3.eth.gas_price,
@@ -198,7 +210,7 @@ class ZetaChain:
 
         tx = {
             "from": self.web3_utils.acct.address,
-            "to": self.web3_utils.w3.to_checksum_address("0x34bc1b87f60e0a30c0e24FD7Abada70436c71406"),
+            "to": self.web3_utils.w3.to_checksum_address(IZUMI_SWAP_CONTRACT),
             "value": self.web3_utils.w3.to_wei(config.SENDS_QUESTS['send_btc'][1], "ether"),
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
             "gasPrice": self.web3_utils.w3.eth.gas_price,
@@ -215,11 +227,11 @@ class ZetaChain:
 
     async def add_liquidity(self):
         contract = self.web3_utils.w3.eth.contract(
-            address=self.web3_utils.w3.to_checksum_address("0x2ca7d64A7EFE2D62A725E2B35Cf7230D6677FfEe"),
+            address=self.web3_utils.w3.to_checksum_address(UNISWAP_V2_ROUTER02),
             abi=abi.pool_abi,
         )
 
-        tx = contract.functions.addLiquidityETH(self.web3_utils.w3.to_checksum_address("0x48f80608B672DC30DC7e3dbBd0343c5F02C738Eb"), self.web3_utils.w3.to_wei(config.POOLS['send_bnb'], "ether"), 0, 0, self.web3_utils.acct.address, self.web3_utils.w3.eth.get_block("latest").timestamp + 3600,
+        tx = contract.functions.addLiquidityETH(self.web3_utils.w3.to_checksum_address(ZRC20_BNB_ADDR), self.web3_utils.w3.to_wei(config.POOLS['send_bnb'], "ether"), 0, 0, self.web3_utils.acct.address, self.web3_utils.w3.eth.get_block("latest").timestamp + 3600,
         ).build_transaction(
             {
                 "from": self.web3_utils.acct.address,
@@ -259,13 +271,13 @@ class ZetaChain:
         return success
 
     async def check_approve_bnb(self):
-        contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address("0x48f80608B672DC30DC7e3dbBd0343c5F02C738Eb"), abi=abi.approve_abi)
-        return self.web3_utils.w3.from_wei(contract.functions.allowance(self.web3_utils.w3.to_checksum_address(self.web3_utils.acct.address), self.web3_utils.w3.to_checksum_address("0x2ca7d64A7EFE2D62A725E2B35Cf7230D6677FfEe")).call(), 'ether')
+        contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address(ZRC20_BNB_ADDR), abi=abi.approve_abi)
+        return self.web3_utils.w3.from_wei(contract.functions.allowance(self.web3_utils.w3.to_checksum_address(self.web3_utils.acct.address), self.web3_utils.w3.to_checksum_address(UNISWAP_V2_ROUTER02)).call(), 'ether')
 
     async def approve_bnb(self):
-        contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address("0x48f80608B672DC30DC7e3dbBd0343c5F02C738Eb"), abi=abi.approve_abi)
+        contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address(ZRC20_BNB_ADDR), abi=abi.approve_abi)
 
-        tx = contract.functions.approve(self.web3_utils.w3.to_checksum_address('0x2ca7d64A7EFE2D62A725E2B35Cf7230D6677FfEe'), self.web3_utils.w3.to_wei(config.APPROVES['bnb_approve'], "ether"),
+        tx = contract.functions.approve(self.web3_utils.w3.to_checksum_address('UNISWAP_V2_ROUTER02'), self.web3_utils.w3.to_wei(config.APPROVES['bnb_approve'], "ether"),
         ).build_transaction(
             {
                 "from": self.web3_utils.acct.address,

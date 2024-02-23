@@ -1,3 +1,4 @@
+# UNISWAP_V2_ROUTER02
 pool_abi = [
     {
         "type": "function",
@@ -15,7 +16,7 @@ pool_abi = [
         "constant": False,
     }
 ]
-
+#  ZRC20_BNB_ADDR
 approve_abi = [
     {
         "type": "function",
@@ -43,6 +44,7 @@ approve_abi = [
 
 ]
 
+# SAFE_PROXY
 encoding_contract_abi = [
     {
         "inputs": [
@@ -69,6 +71,7 @@ encoding_contract_abi = [
     }
 ]
 
+# IZUMI_SWAP_CONTRACT
 multicall_abi = [
     {
         "inputs": [{"internalType": "bytes[]", "name": "data", "type": "bytes[]"}],
