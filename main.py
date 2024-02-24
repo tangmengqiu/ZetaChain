@@ -90,6 +90,10 @@ async def ZC(thread):
                 logger.success(f"Thread {thread} | Not Approved bnb! {zetachain.web3_utils.acct.address}:{tx_hash}")
 
         # adds BNB to the pool
+        #  1. not completed
+        #  2. config send_bnb true
+        #  3. config pool use is true
+        #  4. bnb balance > pools send_bnb value
         if await zetachain.check_completed_task("POOL_DEPOSIT_ANY_POOL") and config.SENDS_QUESTS['send_bnb'][0] and config.POOLS['use'] and float(await zetachain.check_approve_bnb())+0.0001 >= config.POOLS['send_bnb'] and zetachain.web3_utils.w3.from_wei(zetachain.web3_utils.balance_of_erc20(zetachain.web3_utils.acct.address, '0x48f80608B672DC30DC7e3dbBd0343c5F02C738Eb'), 'ether') >= config.POOLS['send_bnb']:
             # status, tx_hash = await zetachain.add_liquidity()
             status, tx_hash = await retry_function(zetachain.add_liquidity, thread)
@@ -99,6 +103,7 @@ async def ZC(thread):
                 logger.error(f"Thread {thread} | Cant Added liquidity zeta-bnb! {zetachain.web3_utils.acct.address}:{tx_hash}")
 
         # marks completed quests
+        # todo, wait some time to refresh the completed tasks
         claimed = await zetachain.claim_tasks()
         if claimed:
             logger.success(f"Thread {thread} | Branded {claimed} quests!! {zetachain.web3_utils.acct.address}")

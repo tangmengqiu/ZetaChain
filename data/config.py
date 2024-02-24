@@ -7,22 +7,22 @@ DELAY = (5, 10)
 # Чтобы отправлять транзакции указывать True/False и через запятую кол-во монет, я указал минимум.
 SENDS_QUESTS = {
     "send_zeta": [True, 0],         # Сколько zeta отправить самому себе?
-    "send_bnb": [True, 0.001],      # Сколько zeta отправить для транзакции zeta->bnb.bsc (izumi)
-    "send_eth": [True, 0.0001],     # Сколько zeta отправить для транзакции zeta->eth.rth (izumi)
-    "send_btc": [True, 0.001],      # Сколько zeta отправить для транзакции zeta->btc.btc (izumi)
+    "send_bnb": [True, 0.001],      # How much zeta to send for a transaction zeta->bnb.bsc (izumi)
+    "send_eth": [True, 0.0001],     # How much zeta to send for a transaction zeta->eth.eth (izumi)
+    "send_btc": [True, 0.001],      # How much zeta to send for a transaction zeta->btc.btc (izumi)
 
 
 }
 
-# Чтобы отправлять в пулы указывать True/False в use.
+# To send to pools, specify True/False in use.
 POOLS = {
     "use": True,              # использовать пулы
-    "send_bnb": 0.0001,       # сколько отправлять бнб в пул
-    "send_zeta": 0.0001       # сколько отправлять zeta в пул
+    "send_bnb": 0.0001,       # how much to send bnb to the pool
+    "send_zeta": 0.0001       # how much to send zeta to the pool
 }
 
 APPROVES = {
-    "bnb_approve": 0.02  # кол-во бнб для апрува
+    "bnb_approve": 0.02  # number of bnb for approval
 }
 
 # рпц
