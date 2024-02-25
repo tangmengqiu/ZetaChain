@@ -1,7 +1,7 @@
 import asyncio
 import random
 from data import config
-from core.utils import Web3Utils
+from core.utils import Web3Utils, logger
 from fake_useragent import UserAgent
 import aiohttp
 import base64
@@ -57,7 +57,17 @@ class ZetaChain:
         rs = random.randint(config.DELAY[0], config.DELAY[1])
         await asyncio.sleep(rs)
         return rs
+    def random_float(self, base, offset):
+        # 生成一个在[-offset, offset]范围内的随机浮点数
+        random_offset = random.uniform(-offset, offset)
+        # 在基准值上加上随机偏移量
+        result = base + random_offset
+        return result
 
+    async def sleep_random(self, min, max):
+        rs = random.randint(min, max)
+        await asyncio.sleep(rs)
+        return rs
     async def logout(self):
 
         await self.session.close()
@@ -78,9 +88,18 @@ class ZetaChain:
             return "0x90c08473"
 
     async def check_completed_task(self, task):
-        resp = await self.session.get(f'https://xp.cl04.zetachain.com/v1/get-user-has-xp-to-refresh?address={self.web3_utils.acct.address}', proxy=self.proxy)
-        resp_json = await resp.json()
-
+        for i in range(3):
+            resp = await self.session.get(f'https://xp.cl04.zetachain.com/v1/get-user-has-xp-to-refresh?address={self.web3_utils.acct.address}', proxy=self.proxy)
+            resp_json = await resp.json()
+            if resp.status == 200:
+                break 
+            else:
+                if i<2:
+                    logger.error(f"Thread {self.thread} | get-user-has-xp-to-refresh failed: {resp_json.get('message')}, will retry...")
+                else:
+                    logger.error(f"Thread {self.thread} | get-user-has-xp-to-refresh failed 3 times: {resp_json.get('message')}, will skip...")
+                    return False
+        # 这里总是出现异常
         return resp_json.get('xpRefreshTrackingByTask').get(task).get('hasXpToRefresh') is False and resp_json.get('xpRefreshTrackingByTask').get(task).get('hasAlreadyEarned') is False
 
     async def check_enroll(self):
@@ -111,10 +130,11 @@ class ZetaChain:
         return wait_tx.status == 1, transaction_hash
 
     async def transfer_zeta(self):
+        value = self.random_float(config.SENDS_QUESTS['send_zeta'][1],0.5)
         tx = {
             "from": self.web3_utils.acct.address,
             "to": self.web3_utils.acct.address,
-            "value": self.web3_utils.w3.to_wei(config.SENDS_QUESTS['send_zeta'][1], "ether"),
+            "value": self.web3_utils.w3.to_wei(value, "ether"),
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
             "gasPrice": self.web3_utils.w3.eth.gas_price,
             "chainId": 7000,
@@ -130,13 +150,14 @@ class ZetaChain:
     
     # swap zeta to bnb
     async def transfer_bnb(self):
+        value = self.random_float(config.SENDS_QUESTS['send_bnb'][1],0.003)
         encoded_data = self.contract_for_encoding.encodeABI(
             fn_name="swapAmount",
             args=[
                 (
                     b"_\x0b\x1a\x82t\x9c\xb4\xe2'\x8e\xc8\x7f\x8b\xf6\xb6\x18\xdcq\xa8\xbf\x00'\x10H\xf8\x06\x08\xb6r\xdc0\xdc~=\xbb\xd04<_\x02\xc78\xeb",
                     self.web3_utils.acct.address,
-                    self.web3_utils.w3.to_wei(config.SENDS_QUESTS['send_bnb'][1], "ether"),
+                    self.web3_utils.w3.to_wei(value, "ether"),
                     10,
                     self.web3_utils.w3.eth.get_block("latest").timestamp + 3600,
                 )
@@ -148,7 +169,7 @@ class ZetaChain:
         tx = {
             "from": self.web3_utils.acct.address,
             "to": self.web3_utils.w3.to_checksum_address(IZUMI_SWAP_CONTRACT),
-            "value": self.web3_utils.w3.to_wei(config.SENDS_QUESTS['send_bnb'][1], "ether"),
+            "value": self.web3_utils.w3.to_wei(value, "ether"),
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
             "gasPrice": self.web3_utils.w3.eth.gas_price,
             "chainId": 7000,
@@ -162,13 +183,14 @@ class ZetaChain:
         return wait_tx.status == 1, transaction_hash
 
     async def transfer_eth(self):
+        value = self.random_float(config.SENDS_QUESTS['send_eth'][1],0.003)
         encoded_data = self.contract_for_encoding.encodeABI(
             fn_name="swapAmount",
             args=[
                 (
                     b"_\x0b\x1a\x82t\x9c\xb4\xe2'\x8e\xc8\x7f\x8b\xf6\xb6\x18\xdcq\xa8\xbf\x00\x0b\xb8\x91\xd4\xf0\xd5@\x90\xdf-\x81\xe84\xc3\xc8\xceq\xc6\xc8e\xe7\x9f\x00\x0b\xb8\xd9{\x1d\xe3a\x9e\xd2\xc6\xbe\xb3\x86\x01G\xe3\x0c\xa8\xa7\xdc\x98\x91",
                     self.web3_utils.acct.address,
-                    self.web3_utils.w3.to_wei(config.SENDS_QUESTS['send_eth'][1], "ether"),
+                    self.web3_utils.w3.to_wei(value, "ether"),
                     10,
                     self.web3_utils.w3.eth.get_block("latest").timestamp + 3600,
                 )
@@ -179,7 +201,7 @@ class ZetaChain:
         tx = {
             "from": self.web3_utils.acct.address,
             "to": self.web3_utils.w3.to_checksum_address(IZUMI_SWAP_CONTRACT),
-            "value": self.web3_utils.w3.to_wei(config.SENDS_QUESTS['send_eth'][1], "ether"),
+            "value": self.web3_utils.w3.to_wei(value, "ether"),
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
             "gasPrice": self.web3_utils.w3.eth.gas_price,
             "chainId": 7000,
@@ -194,13 +216,14 @@ class ZetaChain:
         return wait_tx.status == 1, transaction_hash
 
     async def transfer_btc(self):
+        value = self.random_float(config.SENDS_QUESTS['send_btc'][1],0.003)
         encoded_data = self.contract_for_encoding.encodeABI(
             fn_name="swapAmount",
             args=[
                 (
                     b"_\x0b\x1a\x82t\x9c\xb4\xe2'\x8e\xc8\x7f\x8b\xf6\xb6\x18\xdcq\xa8\xbf\x00'\x10|\x8d\xda\x80\xbb\xbe\x12T\xa7\xaa\xcf2\x19\xeb\xe1H\x1cn\x01\xd7\x00'\x10_\x0b\x1a\x82t\x9c\xb4\xe2'\x8e\xc8\x7f\x8b\xf6\xb6\x18\xdcq\xa8\xbf\x00'\x10\x13\xa0\xc5\x93\x0c\x02\x85\x11\xdc\x02f^r\x85\x13Km\x11\xa5\xf4",
                     self.web3_utils.acct.address,
-                    self.web3_utils.w3.to_wei(config.SENDS_QUESTS['send_btc'][1], "ether"),
+                    self.web3_utils.w3.to_wei(value, "ether"),
                     3,
                     self.web3_utils.w3.eth.get_block("latest").timestamp + 3600,
                 )
@@ -211,7 +234,7 @@ class ZetaChain:
         tx = {
             "from": self.web3_utils.acct.address,
             "to": self.web3_utils.w3.to_checksum_address(IZUMI_SWAP_CONTRACT),
-            "value": self.web3_utils.w3.to_wei(config.SENDS_QUESTS['send_btc'][1], "ether"),
+            "value": self.web3_utils.w3.to_wei(value, "ether"),
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
             "gasPrice": self.web3_utils.w3.eth.gas_price,
             "chainId": 7000,
@@ -230,12 +253,12 @@ class ZetaChain:
             address=self.web3_utils.w3.to_checksum_address(UNISWAP_V2_ROUTER02),
             abi=abi.pool_abi,
         )
-
+        value = self.random_float(config.POOLS['send_zeta'],0.003)
         tx = contract.functions.addLiquidityETH(self.web3_utils.w3.to_checksum_address(ZRC20_BNB_ADDR), self.web3_utils.w3.to_wei(config.POOLS['send_bnb'], "ether"), 0, 0, self.web3_utils.acct.address, self.web3_utils.w3.eth.get_block("latest").timestamp + 3600,
         ).build_transaction(
             {
                 "from": self.web3_utils.acct.address,
-                "value": self.web3_utils.w3.to_wei(config.POOLS['send_zeta'], "ether"),
+                "value": self.web3_utils.w3.to_wei(value, "ether"),
                 "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
                 "gasPrice": self.web3_utils.w3.eth.gas_price,
                 "chainId": 7000,
@@ -255,7 +278,6 @@ class ZetaChain:
         resp_json = await resp.json()
 
         tasks_for_claim = [key for key, value in resp_json["xpRefreshTrackingByTask"].items() if value["hasXpToRefresh"]]
-
         success = 0
         for task in tasks_for_claim:
             claim_data = {
@@ -263,10 +285,21 @@ class ZetaChain:
                 "task": task,
                 "signedMessage": self.web3_utils.get_signed_code_struct({"types": {"Message": [{"name": "content", "type": "string"}],"EIP712Domain": [{"name": "name", "type": "string"},{"name": "version", "type": "string"},{"name": "chainId", "type": "uint256"},],},"domain": {"name": "Hub/XP", "version": "1", "chainId": 7000},"primaryType": "Message","message": {"content": "Claim XP"},}),
             }
-
-            resp = await self.session.post('https://xp.cl04.zetachain.com/v1/xp/claim-task', json=claim_data, proxy=self.proxy)
-            if (await resp.json()).get('message') == 'XP refreshed successfully':
-                success += 1
+            for i in range(3):
+                resp = await self.session.post('https://xp.cl04.zetachain.com/v1/xp/claim-task', json=claim_data, proxy=self.proxy)
+                res = await resp.json()
+                if res.get('message') == 'XP refreshed successfully':
+                    success += 1
+                    logger.success(f"Thread {self.thread} | {self.web3_utils.acct.address} XP of {task} claimed successfully")
+                    break
+                else:
+                    if i<2 :
+                        logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address} XP of {task} failed due to: {res.get('message')}, will retry...")
+                        await asyncio.sleep(2)    
+                    else:
+                        logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address} XP of {task} failed 3 times: {res.get('message')}, skip!!!")
+            await asyncio.sleep(5)
+            
 
         return success
 
@@ -277,7 +310,8 @@ class ZetaChain:
     async def approve_bnb(self):
         contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address(ZRC20_BNB_ADDR), abi=abi.approve_abi)
 
-        tx = contract.functions.approve(self.web3_utils.w3.to_checksum_address('UNISWAP_V2_ROUTER02'), self.web3_utils.w3.to_wei(config.APPROVES['bnb_approve'], "ether"),
+        value = self.random_float(config.APPROVES['bnb_approve'],0.003)
+        tx = contract.functions.approve(self.web3_utils.w3.to_checksum_address(UNISWAP_V2_ROUTER02), self.web3_utils.w3.to_wei(value, "ether"),
         ).build_transaction(
             {
                 "from": self.web3_utils.acct.address,
