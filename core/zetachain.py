@@ -95,9 +95,9 @@ class ZetaChain:
                 break 
             else:
                 if i<2:
-                    logger.error(f"Thread {self.thread} | get-user-has-xp-to-refresh failed: {resp_json.get('message')}, will retry...")
+                    logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address}: get-user-has-xp-to-refresh failed: {resp_json.get('message')}, will retry...")
                 else:
-                    logger.error(f"Thread {self.thread} | get-user-has-xp-to-refresh failed 3 times: {resp_json.get('message')}, will skip...")
+                    logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address}: get-user-has-xp-to-refresh failed 3 times: {resp_json.get('message')}, will skip...")
                     return False
         # 这里总是出现异常
         return resp_json.get('xpRefreshTrackingByTask').get(task).get('hasXpToRefresh') is False and resp_json.get('xpRefreshTrackingByTask').get(task).get('hasAlreadyEarned') is False

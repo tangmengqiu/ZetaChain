@@ -76,7 +76,7 @@ async def ZC(thread):
         else:
             private_key = act
             proxy = None
-
+        logger.info(f"Thread {thread} | with proxy {proxy}")
         zetachain = ZetaChain(key=private_key, thread=thread, proxy=proxy)
 
         # Do enroll
@@ -93,12 +93,18 @@ async def ZC(thread):
         #         logger.error(f"Thread {thread} | Didn't comply enroll! {zetachain.web3_utils.acct.address}:{tx_hash}")
         # else:
         #     logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} already enrolled before.")
-       
-        await zetachain.sleep_random(1,3)
+        
+        # random launch
+        if not config.FAST_MODE:
+            await zetachain.sleep_random(10,50)
+        
         random.shuffle(functions)
         for func in functions:
             await func(zetachain,thread)
-            await zetachain.sleep_random(12,15)
+            if not config.FAST_MODE:
+                await zetachain.sleep_random(120,150)
+            else:
+                await zetachain.sleep_random(3,10)
         
         # approval bnb
         if float(await zetachain.check_approve_bnb())+0.001 < config.APPROVES['bnb_approve']:
@@ -139,8 +145,12 @@ async def ZC(thread):
         
         # marks completed quests
         logger.info(f"Thread {thread} | wait 180s to claim xps...")
-        await asyncio.sleep(180)
-        
+        # await asyncio.sleep(180)
+        if not config.FAST_MODE:
+            await zetachain.sleep_random(120,180)
+        else:
+            await zetachain.sleep_random(3,10)
+    
         claimed = await zetachain.claim_tasks()
         if claimed:
             logger.success(f"Thread {thread} | Claimed {claimed} quests!! {zetachain.web3_utils.acct.address}")
