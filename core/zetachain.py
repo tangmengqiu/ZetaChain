@@ -53,10 +53,11 @@ class ZetaChain:
         self.session = aiohttp.ClientSession(headers=headers, trust_env=True)
 
     @staticmethod
-    async def sleep():
-        rs = random.randint(config.DELAY[0], config.DELAY[1])
+    async def sleep(interval, logger, thread: int):
+        rs = random.randint(interval[0], interval[1])
+        logger.info(f"Thread {thread} | Sleep {rs} seconds")
+
         await asyncio.sleep(rs)
-        return rs
     def random_float(self, base, offset):
         # 生成一个在[-offset, offset]范围内的随机浮点数
         random_offset = random.uniform(-offset, offset)
@@ -254,7 +255,13 @@ class ZetaChain:
             abi=abi.pool_abi,
         )
         value = self.random_float(config.POOLS['send_zeta'],0.003)
-        tx = contract.functions.addLiquidityETH(self.web3_utils.w3.to_checksum_address(ZRC20_BNB_ADDR), self.web3_utils.w3.to_wei(config.POOLS['send_bnb'], "ether"), 0, 0, self.web3_utils.acct.address, self.web3_utils.w3.eth.get_block("latest").timestamp + 3600,
+        tx = contract.functions.addLiquidityETH(
+            self.web3_utils.w3.to_checksum_address(ZRC20_BNB_ADDR), 
+            self.web3_utils.w3.to_wei(config.POOLS['send_bnb'], "ether"),
+            0, 
+            0, 
+            self.web3_utils.acct.address, 
+            self.web3_utils.w3.eth.get_block("latest").timestamp + 3600,
         ).build_transaction(
             {
                 "from": self.web3_utils.acct.address,
@@ -307,24 +314,181 @@ class ZetaChain:
         contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address(ZRC20_BNB_ADDR), abi=abi.approve_abi)
         return self.web3_utils.w3.from_wei(contract.functions.allowance(self.web3_utils.w3.to_checksum_address(self.web3_utils.acct.address), self.web3_utils.w3.to_checksum_address(UNISWAP_V2_ROUTER02)).call(), 'ether')
 
-    async def approve_bnb(self):
-        contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address(ZRC20_BNB_ADDR), abi=abi.approve_abi)
+    # async def approve_bnb(self):
+    #     contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address(ZRC20_BNB_ADDR), abi=abi.approve_abi)
 
-        value = self.random_float(config.APPROVES['bnb_approve'],0.003)
-        tx = contract.functions.approve(self.web3_utils.w3.to_checksum_address(UNISWAP_V2_ROUTER02), self.web3_utils.w3.to_wei(value, "ether"),
-        ).build_transaction(
-            {
-                "from": self.web3_utils.acct.address,
-                "value": 0,
-                "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
-                "gasPrice": self.web3_utils.w3.eth.gas_price,
-                "chainId": 7000,
-            }
-        )
+    #     value = self.random_float(config.APPROVES['bnb_approve'],0.003)
+    #     tx = contract.functions.approve(self.web3_utils.w3.to_checksum_address(UNISWAP_V2_ROUTER02), self.web3_utils.w3.to_wei(value, "ether"),
+    #     ).build_transaction(
+    #         {
+    #             "from": self.web3_utils.acct.address,
+    #             "value": 0,
+    #             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
+    #             "gasPrice": self.web3_utils.w3.eth.gas_price,
+    #             "chainId": 7000,
+    #         }
+    #     )
+    #     tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+
+    #     tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
+    #     transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
+    #     wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
+
+    #     return wait_tx.status == 1, transaction_hash
+    
+    async def allowance_bnb(self):
+        return self.web3_utils.allowance(spender="0x2ca7d64A7EFE2D62A725E2B35Cf7230D6677FfEe", contract="0x48f80608B672DC30DC7e3dbBd0343c5F02C738Eb", abi=abi.approve_abi)
+
+    async def allowance_stzeta(self):
+        return self.web3_utils.allowance(spender="0x08f4539f91faa96b34323c11c9b00123ba19eef3", contract="0x45334a5b0a01ce6c260f2b570ec941c680ea62c0", abi=abi.approve_abi)
+
+    async def allowance_wzeta(self):
+        return self.web3_utils.allowance(spender="0x08f4539f91faa96b34323c11c9b00123ba19eef3", contract="0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf", abi=abi.approve_abi)
+    async def approve_bnb(self):
+        spender = "0x2ca7d64A7EFE2D62A725E2B35Cf7230D6677FfEe"
+        contract = "0x48f80608B672DC30DC7e3dbBd0343c5F02C738Eb"
+        return self.web3_utils.approve(spender, config.APPROVES['bnb_approve'], abi.approve_abi, contract)
+
+    async def approve_stzeta(self):
+        spender = "0x08f4539f91faa96b34323c11c9b00123ba19eef3"
+        contract = "0x45334a5b0a01ce6c260f2b570ec941c680ea62c0"
+        return self.web3_utils.approve(spender, config.APPROVES['stzeta_approve'], abi.approve_abi, contract)
+
+    async def approve_wzeta(self):
+        spender = "0x08f4539f91faa96b34323c11c9b00123ba19eef3"
+        contract = "0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf"
+        return self.web3_utils.approve(spender, config.APPROVES['wzeta_approve'], abi.approve_abi, contract)
+
+    async def swap_zeta_to_stzeta(self):
+        from_ = "0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf"   # zeta
+        to = "0x45334a5b0a01ce6c260f2b570ec941c680ea62c0"      # stzeta
+
+        return self.web3_utils.eddy_finance_swap(from_, to, config.EDDY_SWAP["zeta_to_stzeta"])
+
+    async def swap_zeta_to_wzeta(self):
+        tx = {
+            "from": self.web3_utils.acct.address,
+            "to": self.web3_utils.w3.to_checksum_address("0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf"),
+            "value": self.web3_utils.w3.to_wei(config.EDDY_SWAP['zeta_to_wzeta'], "ether"),
+            "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
+            "gasPrice": self.web3_utils.w3.eth.gas_price,
+            "chainId": 7000,
+            "data": "0xd0e30db0",
+        }
         tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
 
         tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
         transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
-        wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
 
+        wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
+        return wait_tx.status == 1, transaction_hash
+
+    async def get_wzeta_balance(self):
+        return self.web3_utils.w3.from_wei(self.web3_utils.balance_of_erc20(self.web3_utils.acct.address, '0x5F0b1a82749cb4E2278EC87F8BF6B618dC71a8bf'),'ether')
+
+    async def get_stzeta_balance(self):
+        return self.web3_utils.w3.from_wei(self.web3_utils.balance_of_erc20(self.web3_utils.acct.address, '0x45334a5b0a01ce6c260f2b570ec941c680ea62c0'), 'ether')
+
+    async def get_price_range(self):
+        json_data = {"query":"\n      query getVaultItemById($vaultId: String) {\n        vault(id: $vaultId) {\n          \n  id\n  liquidity\n  balance0\n  balance1\n  totalSupply\n  totalFeesEarned0\n  totalFeesEarned1\n  tokenX\n  tokenY\n  firstMintAtBlock\n  managerBalanceX\n  managerBalanceY\n  name\n  tag\n  pool\n\n          managingFee\n          performanceFee\n        }\n      }\n    ","variables":{"vaultId":"0x08F4539f91faA96b34323c11C9B00123bA19eef3"},"operationName":"getVaultItemById"}
+
+        resp = await self.session.post("https://api.goldsky.com/api/public/project_clm97huay3j9y2nw04d8nhmrt/subgraphs/zetachain-izumi/0.2/gn", json=json_data)
+
+        resp_json = await resp.json()
+        percent = int(resp_json['data']['vault']['balance0'])/int(resp_json['data']['vault']['balance1'])
+        return percent
+
+    def generate_data_range(self, stzeta_amount, wzeta_amount, mint_amount):
+        stzeta_hex = self.web3_utils.w3.to_hex(stzeta_amount)[2:]
+        wzeta_hex = self.web3_utils.w3.to_hex(wzeta_amount)[2:]
+        mint_hex = self.web3_utils.w3.to_hex(mint_amount)[2:]
+
+        stzeta = '0' * (64 - len(stzeta_hex)) + stzeta_hex
+        wzeta = '0' * (64 - len(wzeta_hex)) + wzeta_hex
+        mint = '0' * (64 - len(mint_hex)) + mint_hex
+
+        return f"0xb341ee9f{mint.lower()}{stzeta.lower()}{wzeta.lower()}"
+
+    async def mint_amount(self):
+        contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address("0x08f4539f91faa96b34323c11c9b00123ba19eef3"), abi=abi.range_protocol_abi)
+        percent = await self.get_price_range()
+
+        token_x = self.web3_utils.w3.to_wei(config.POOLS['stzeta'], 'ether')
+        token_y = self.web3_utils.w3.to_wei(config.POOLS['stzeta']/percent, 'ether')
+        return contract.functions.getMintAmounts(int(token_x), int(token_y)).call()
+
+    async def add_liquidity_range(self):
+        stzeta_amount, wzeta_amount, mint_amount = await self.mint_amount()
+
+        # print(stzeta_amount, wzeta_amount, mint_amount)
+        # print(f"ztzeta: {stzeta_amount}({stzeta_amount/1e18}), wzeta: {wzeta_amount}({wzeta_amount/1e18}), mint amount: {mint_amount}({mint_amount/1e18})")
+
+        tx = {
+            "from": self.web3_utils.acct.address,
+            "to": self.web3_utils.w3.to_checksum_address("0x08F4539f91faA96b34323c11C9B00123bA19eef3"),
+            "value": 0,
+            "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
+            "gasPrice": self.web3_utils.w3.eth.gas_price,
+            "chainId": 7000,
+            "data": self.generate_data_range(stzeta_amount, wzeta_amount, mint_amount),
+        }
+        tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+
+        tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
+        transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
+
+        wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
+        return wait_tx.status == 1, transaction_hash
+
+    async def swap_zeta_to_stzeta_accumulated_finance(self):
+        tx = {
+            "from": self.web3_utils.acct.address,
+            "to": self.web3_utils.w3.to_checksum_address("0xcf1A40eFf1A4d4c56DC4042A1aE93013d13C3217"),
+            "value": self.web3_utils.w3.to_wei(config.ACCUMULATED_FINANCE['zeta_to_stzeta'], 'ether'),
+            "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
+            "gasPrice": self.web3_utils.w3.eth.gas_price,
+            "chainId": 7000,
+            "data": f"0xf340fa01000000000000000000000000{self.web3_utils.acct.address[2:]}",
+        }
+        tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+
+        tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
+        transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
+
+        wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
+        return wait_tx.status == 1, transaction_hash
+
+    async def get_balance_stzeta_accumulated_finance(self):
+        return self.web3_utils.w3.from_wei(self.web3_utils.balance_of_erc20(self.web3_utils.acct.address, '0xcba2aeec821b0b119857a9ab39e09b034249681a'), 'ether')
+
+    async def allowance_stzeta_accumulated_finance(self):
+        return self.web3_utils.allowance(spender="0x7ac168c81f4f3820fa3f22603ce5864d6ab3c547", contract="0xcba2aeec821b0b119857a9ab39e09b034249681a", abi=abi.approve_abi)
+
+    async def approve_stzeta_accumulated_finance(self):
+        spender = "0x7ac168c81f4f3820fa3f22603ce5864d6ab3c547"
+        contract = "0xcba2aeec821b0b119857a9ab39e09b034249681a"
+        return self.web3_utils.approve(spender, config.APPROVES['stzeta_accumulated_approve'], abi.approve_abi, contract)
+
+    # stake stzeta
+    async def swap_stzeta_to_wstzeta_accumulated_finance(self):
+        amount_hex = self.web3_utils.w3.to_hex(self.web3_utils.w3.to_wei(config.ACCUMULATED_FINANCE['stzeta_to_wstzeta'], 'ether'))[2:]
+        amount = '0' * (64 - len(amount_hex)) + amount_hex
+
+        data = f"0x6e553f65{amount}000000000000000000000000{self.web3_utils.acct.address[2:]}"
+
+        tx = {
+            "from": self.web3_utils.acct.address,
+            "to": self.web3_utils.w3.to_checksum_address("0x7AC168c81F4F3820Fa3F22603ce5864D6aB3C547"),
+            "value": 0,
+            "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
+            "gasPrice": self.web3_utils.w3.eth.gas_price,
+            "chainId": 7000,
+            "data": data,
+        }
+        tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+
+        tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
+        transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
+
+        wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
         return wait_tx.status == 1, transaction_hash

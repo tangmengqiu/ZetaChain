@@ -3,6 +3,7 @@ from eth_account.messages import encode_defunct, SignableMessage, encode_structu
 from web3 import Web3
 
 
+
 class Web3Utils:
     def __init__(self, http_provider: str = 'https://eth.llamarpc.com', mnemonic: str = None, key: str = None):
         self.w3 = None
@@ -46,3 +47,47 @@ class Web3Utils:
 
         contract = self.w3.eth.contract(address=self.w3.to_checksum_address(contract_address), abi=abi)
         return contract.functions.balanceOf(address).call()
+
+    def eddy_finance_swap(self, from_: str, to: str, amount: float):
+        data = f"0x148e6bcc000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000002000000000000000000000000{from_[2:]}000000000000000000000000{to[2:]}"
+
+        tx = {
+            "from": self.acct.address,
+            "to": self.w3.to_checksum_address("0xDE3167958Ad6251E8D6fF1791648b322Fc6B51bD"),
+            "value": self.w3.to_wei(amount, "ether"),
+            "nonce": self.w3.eth.get_transaction_count(self.acct.address),
+            "gasPrice": self.w3.eth.gas_price,
+            "chainId": 7000,
+            "data": data,
+        }
+        tx["gas"] = int(self.w3.eth.estimate_gas(tx))
+
+        tx = self.w3.eth.account.sign_transaction(tx, self.acct.key.hex())
+        transaction_hash = self.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
+
+        wait_tx = self.w3.eth.wait_for_transaction_receipt(transaction_hash)
+        return wait_tx.status == 1, transaction_hash
+
+    def approve(self, spender: str, amount: float, abi: str, contract: str):
+        contract = self.w3.eth.contract(address=self.w3.to_checksum_address(contract), abi=abi)
+
+        tx = contract.functions.approve(self.w3.to_checksum_address(spender), self.w3.to_wei(amount, "ether")).build_transaction(
+            {
+                "from": self.acct.address,
+                "value": 0,
+                "nonce": self.w3.eth.get_transaction_count(self.acct.address),
+                "gasPrice": self.w3.eth.gas_price,
+                "chainId": 7000,
+            }
+        )
+        tx["gas"] = int(self.w3.eth.estimate_gas(tx))
+
+        tx = self.w3.eth.account.sign_transaction(tx, self.acct.key.hex())
+        transaction_hash = self.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
+        wait_tx = self.w3.eth.wait_for_transaction_receipt(transaction_hash)
+
+        return wait_tx.status == 1, transaction_hash
+
+    def allowance(self, spender: str, contract: str, abi: str):
+        contract = self.w3.eth.contract(address=self.w3.to_checksum_address(contract), abi=abi)
+        return self.w3.from_wei(contract.functions.allowance(self.w3.to_checksum_address(self.acct.address), self.w3.to_checksum_address(spender)).call(), 'ether')

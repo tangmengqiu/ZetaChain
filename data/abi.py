@@ -81,3 +81,40 @@ multicall_abi = [
         "type": "function",
     }
 ]
+
+range_protocol_abi = [
+    {
+        "inputs": [
+            {
+                "internalType": "uint128",
+                "name": "amountXMax",
+                "type": "uint128"
+            },
+            {
+                "internalType": "uint128",
+                "name": "amountYMax",
+                "type": "uint128"
+            }
+        ],
+        "name": "getMintAmounts",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "amountX",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amountY",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "mintAmount",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
