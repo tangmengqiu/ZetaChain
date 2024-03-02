@@ -38,20 +38,22 @@ POOLS = {
 # }
 APPROVES = {
     "bnb_approve": 0.03,  # кол-во бнб для апрува
-    "stzeta_approve": 0.1,  # кол-во stzeta для апрува
-    "wzeta_approve": 0.1,   # кол-во wzeta для апрува
-    "stzeta_accumulated_approve": 0.2
+    "stzeta_approve": 0.25,  # кол-во stzeta для апрува
+    "wzeta_approve": 0.25,   # кол-во wzeta для апрува
+    "stzeta_accumulated_approve": 0.3
 }
 
-# свап на app.eddy.finance/swap
+# swap on app.eddy.finance
+# so can add liqility on range
 EDDY_SWAP = {
     "zeta_to_stzeta": 0.0013,  # кол-во zeta для свапа на stzeta
-    "zeta_to_wzeta": 0.001,   # кол-во zeta для свапа на wzeta, можно не больше zeta_to_stzeta
+    "zeta_to_wzeta": 0.0002,   # кол-во zeta для свапа на wzeta, можно не больше zeta_to_stzeta
 }
 
+# mint and stake on accumulated
 ACCUMULATED_FINANCE = {
-    "zeta_to_stzeta": 0.0001,     # кол-во zeta для свапа на stzeta на accumulated finance
-    "stzeta_to_wstzeta": 0.0001  # кол-во stzeta для свапа на wstzeta на accumulated finance, должно быть не больше zeta_to_stzeta
+    "zeta_to_stzeta": 0.0002,     # кол-во zeta для свапа на stzeta на accumulated finance
+    "stzeta_to_wstzeta": 0.0002  # кол-во stzeta для свапа на wstzeta на accumulated finance, должно быть не больше zeta_to_stzeta
 }
 
 FAST_MODE = True #set to true if you run the second time(to finish the task not completed in the 1st round) or want to quickly end

@@ -115,7 +115,7 @@ async def swap_btc(zetachain,thread):
         logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} had swap btc before.")
 
 async def stake_on_accumulated(zetachain,thread):
-    if not await zetachain.check_completed_task("ACCUMULATED_FINANCE_DEPOSIT"):
+    if await zetachain.check_completed_task("ACCUMULATED_FINANCE_DEPOSIT"):
          # swap zeta to stzeta accumulated
         if await zetachain.get_balance_stzeta_accumulated_finance() < config.ACCUMULATED_FINANCE['zeta_to_stzeta']:
             status, tx_hash = await retry_function(zetachain.swap_zeta_to_stzeta_accumulated_finance, thread)
@@ -177,7 +177,7 @@ async def liquidity_on_range(zetachain,thread):
                 f"Thread {thread} | Cannot Approved wzeta! {zetachain.web3_utils.acct.address}:{tx_hash}")
     else:
         logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} had approved enough wzeta to add liquidity on range, skip approval...")
-    # swap zeta to wzeta
+    # swap zeta to wzeta on eddy
     if await zetachain.get_wzeta_balance() < config.EDDY_SWAP['zeta_to_wzeta']:
         status, tx_hash = await retry_function(zetachain.swap_zeta_to_wzeta, thread)
         if status:
@@ -197,13 +197,13 @@ async def liquidity_on_range(zetachain,thread):
     if not await zetachain.check_completed_task("RANGE_PROTOCOL_VAULT_TRANSACTION"):
         logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} had add liquidity on range before... ")
     elif not  await zetachain.get_stzeta_balance() >= config.POOLS['stzeta']:
-        logger.error(f"Thread {thread} | {zetachain.web3_utils.acct.address} cannot add liquidity on range, not enough sezeta balance... ")
+        logger.error(f"Thread {thread} | {zetachain.web3_utils.acct.address} cannot add liquidity on range, not enough stzeta balance... ")
     elif not  await zetachain.get_wzeta_balance() >= config.EDDY_SWAP['zeta_to_wzeta']:
         logger.error(f"Thread {thread} | {zetachain.web3_utils.acct.address} cannot add liquidity on range, not enough wzeta balance... ")
     elif not await zetachain.allowance_stzeta() >= config.POOLS['stzeta']:
-        logger.error(f"Thread {thread} | {zetachain.web3_utils.acct.address} cannot add liquidity on range, not enough sezeta allowance... ")
+        logger.error(f"Thread {thread} | {zetachain.web3_utils.acct.address} cannot add liquidity on range, not enough stzeta allowance... ")
     elif not await zetachain.allowance_wzeta() >= config.EDDY_SWAP['zeta_to_wzeta']:
-        logger.error(f"Thread {thread} | {zetachain.web3_utils.acct.address} cannot add liquidity on range, not enough weta balance... ")
+        logger.error(f"Thread {thread} | {zetachain.web3_utils.acct.address} cannot add liquidity on range, not enough wzeta allowance... ")
     else:
         status, tx_hash = await retry_function(zetachain.add_liquidity_range, thread)
         if status:
@@ -232,19 +232,7 @@ async def swap_on_eddy(zetachain,thread):
 # functions = [send_self_zeta, swap_bnb, swap_eth, swap_btc,swap_eddy_then_range_pool,stake_on_accumulated]
 
 
-# 有向无环图
-DAG = {
-    # make sure a excuted before b
-    # function_a: [function_b],
-    send_self_zeta: [],
-    swap_bnb: [add_bnb_pool],
-    add_bnb_pool:[],
-    swap_eth:[],
-    swap_btc:[],
-    swap_on_eddy:[liquidity_on_range],
-    liquidity_on_range:[],
-    stake_on_accumulated:[],
-}
+
 
 async def execute_graph(graph, zetachain, thread):
     nodes = list(graph.keys())
@@ -254,8 +242,10 @@ async def execute_graph(graph, zetachain, thread):
         predecessors = [func for func in graph if node in graph[func]]
         if not predecessors:
             await node(zetachain, thread)
-            del graph[node]
-
+            if node in graph:
+                del graph[node]
+            else:
+                print(f"{node} function 不存在，请检查")
             break
 
 async def ZC(thread):
@@ -282,7 +272,19 @@ async def ZC(thread):
         #         await zetachain.sleep_random(120,150)
         #     else:
         #         await zetachain.sleep_random(3,10)
-            
+        # 有向无环图
+        DAG = {
+            # make sure a excuted before b
+            # function_a: [function_b],
+            send_self_zeta: [],
+            swap_bnb: [add_bnb_pool],
+            add_bnb_pool:[],
+            swap_eth:[],
+            swap_btc:[],
+            swap_on_eddy:[liquidity_on_range],
+            liquidity_on_range:[],
+            stake_on_accumulated:[],
+        }   
         
         while DAG:
             await execute_graph(DAG, zetachain, thread)
