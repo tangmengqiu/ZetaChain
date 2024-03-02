@@ -198,7 +198,7 @@ async def liquidity_on_range(zetachain,thread):
         logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} had add liquidity on range before... ")
     elif not  await zetachain.get_stzeta_balance() >= config.POOLS['stzeta']:
         logger.error(f"Thread {thread} | {zetachain.web3_utils.acct.address} cannot add liquidity on range, not enough stzeta balance... ")
-    elif not  await zetachain.get_wzeta_balance() >= config.EDDY_SWAP['zeta_to_wzeta']:
+    elif not  await zetachain.get_wzeta_balance() >= config.EDDY_SWAP['zeta_to_wzeta'] - config.EDDY_SWAP['wzeta_offset']:
         logger.error(f"Thread {thread} | {zetachain.web3_utils.acct.address} cannot add liquidity on range, not enough wzeta balance... ")
     elif not await zetachain.allowance_stzeta() >= config.POOLS['stzeta']:
         logger.error(f"Thread {thread} | {zetachain.web3_utils.acct.address} cannot add liquidity on range, not enough stzeta allowance... ")

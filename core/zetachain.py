@@ -260,7 +260,7 @@ class ZetaChain:
             address=self.web3_utils.w3.to_checksum_address(UNISWAP_V2_ROUTER02),
             abi=abi.pool_abi,
         )
-        value = self.random_float_precision(config.POOLS['send_zeta'],config.POOLS['offset'],4)
+        value = self.random_float_precision(config.POOLS['send_zeta'],config.POOLS['offset'],3)
         bnb_value =  self.random_float_precision(config.POOLS['send_bnb'],config.POOLS['send_bnb_offset'],5)
         logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to add_liquidity: {value} zeta (random as value) and {bnb_value} (random) bnb")
 
@@ -305,6 +305,8 @@ class ZetaChain:
             }
             for i in range(3):
                 resp = await self.session.post('https://xp.cl04.zetachain.com/v1/xp/claim-task', json=claim_data, proxy=self.proxy)
+                if resp.status != 200:
+                    continue
                 res = await resp.json()
                 if res.get('message') == 'XP refreshed successfully':
                     success += 1
@@ -324,28 +326,6 @@ class ZetaChain:
     async def check_approve_bnb(self):
         contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address(ZRC20_BNB_ADDR), abi=abi.approve_abi)
         return self.web3_utils.w3.from_wei(contract.functions.allowance(self.web3_utils.w3.to_checksum_address(self.web3_utils.acct.address), self.web3_utils.w3.to_checksum_address(UNISWAP_V2_ROUTER02)).call(), 'ether')
-
-    # async def approve_bnb(self):
-    #     contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address(ZRC20_BNB_ADDR), abi=abi.approve_abi)
-
-    #     value = self.random_float(config.APPROVES['bnb_approve'],0.003)
-    #     tx = contract.functions.approve(self.web3_utils.w3.to_checksum_address(UNISWAP_V2_ROUTER02), self.web3_utils.w3.to_wei(value, "ether"),
-    #     ).build_transaction(
-    #         {
-    #             "from": self.web3_utils.acct.address,
-    #             "value": 0,
-    #             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
-    #             "gasPrice": self.web3_utils.w3.eth.gas_price,
-    #             "chainId": 7000,
-    #         }
-    #     )
-    #     tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
-
-    #     tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
-    #     transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
-    #     wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
-
-    #     return wait_tx.status == 1, transaction_hash
     
     async def allowance_bnb(self):
         return self.web3_utils.allowance(spender="0x2ca7d64A7EFE2D62A725E2B35Cf7230D6677FfEe", contract="0x48f80608B672DC30DC7e3dbBd0343c5F02C738Eb", abi=abi.approve_abi)
@@ -375,16 +355,16 @@ class ZetaChain:
         approval = self.random_float_precision(config.APPROVES['stzeta_approve'],config.APPROVES['offset'],2)
         logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to approve: {approval} wzeta")
         return self.web3_utils.approve(spender, approval, abi.approve_abi, contract)
-
+    # swap_zeta_to_stzeta on eddy
     async def swap_zeta_to_stzeta(self):
         from_ = "0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf"   # zeta
         to = "0x45334a5b0a01ce6c260f2b570ec941c680ea62c0"      # stzeta
-        value = self.random_float_precision(config.EDDY_SWAP["zeta_to_stzeta"],config.EDDY_SWAP["zeta_offset"],4)
-        logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to swap_zeta_to_stzeta on eddy: {value} wzeta")
+        value = self.random_float_precision(config.EDDY_SWAP["zeta_to_stzeta"],config.EDDY_SWAP["zeta_offset"],3)
+        logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to swap: {value} zeta on eddy stzeta")
         return self.web3_utils.eddy_finance_swap(from_, to,value )
-
+    # swap_zeta_to_wzeta on eddy
     async def swap_zeta_to_wzeta(self):
-        value  = self .random_float_precision(config.EDDY_SWAP['zeta_to_wzeta'],config.EDDY_SWAP['wzeta_offset'],4)
+        value  = self .random_float_precision(config.EDDY_SWAP['zeta_to_wzeta'],config.EDDY_SWAP['wzeta_offset'],3)
         tx = {
             "from": self.web3_utils.acct.address,
             "to": self.web3_utils.w3.to_checksum_address("0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf"),
@@ -459,9 +439,9 @@ class ZetaChain:
 
         wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
         return wait_tx.status == 1, transaction_hash
-
+    # mint stzeta on accumulate
     async def swap_zeta_to_stzeta_accumulated_finance(self):
-        value = self.random_float_precision(config.ACCUMULATED_FINANCE['zeta_to_stzeta'],config.ACCUMULATED_FINANCE['offset'],5)
+        value = self.random_float_precision(config.ACCUMULATED_FINANCE['zeta_to_stzeta'],config.ACCUMULATED_FINANCE['offset'],3)
         tx = {
             "from": self.web3_utils.acct.address,
             "to": self.web3_utils.w3.to_checksum_address("0xcf1A40eFf1A4d4c56DC4042A1aE93013d13C3217"),
@@ -491,9 +471,9 @@ class ZetaChain:
         logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to approve: {config.APPROVES['stzeta_accumulated_approve']} stzeta")
         return self.web3_utils.approve(spender, config.APPROVES['stzeta_accumulated_approve'], abi.approve_abi, contract)
 
-    # stake stzeta
+    # stake stzeta to wstzeta on accumulated
     async def swap_stzeta_to_wstzeta_accumulated_finance(self):
-        value = self.random_float_precision(config.ACCUMULATED_FINANCE['stzeta_to_wstzeta'],config.ACCUMULATED_FINANCE['offset'],5)
+        value = self.random_float_precision(config.ACCUMULATED_FINANCE['stzeta_to_wstzeta'],config.ACCUMULATED_FINANCE['offset'],3)
         amount_hex = self.web3_utils.w3.to_hex(self.web3_utils.w3.to_wei(value, 'ether'))[2:]
         amount = '0' * (64 - len(amount_hex)) + amount_hex
 
