@@ -4,56 +4,57 @@ REF_LINK = 'https://hub.zetachain.com/xp?code=YWRkcmVzcz0weGJDZDJCMzE3MDYxODY1RT
 # задержка в секундах между аккаунтами
 
 DELAY = {
-    "account": (5, 10),       # Задержка в секундах между аккаунтами
+    "account": (5, 6),       # Задержка в секундах между аккаунтами
     "transaction": (20, 30),  # Задержка в секундах между транзакциями
-    "quest": (5, 10)          # Задержка в секундах между квестами
+    "quest": (20, 30)          # Задержка в секундах между квестами
 }
 
 # Чтобы отправлять транзакции указывать True/False и через запятую кол-во монет, я указал минимум.
 SENDS_QUESTS = {
     "send_zeta": [True, 1.5],         # Сколько zeta отправить самому себе?
+    "send_offset": 0.005,
     "send_bnb": [True, 0.03],      # How much zeta to send for a transaction zeta->bnb.bsc (izumi)
-    "send_eth": [True, 0.02],     # How much zeta to send for a transaction zeta->eth.eth (izumi)
-    "send_btc": [True, 0.025],      # How much zeta to send for a transaction zeta->btc.btc (izumi)
+    "send_eth": [True, 0.02],      # How much zeta to send for a transaction zeta->eth.eth (izumi)
+    "send_btc": [True, 0.025],     # How much zeta to send for a transaction zeta->btc.btc (izumi)
 }
 
 # To send to pools, specify True/False in use.
 POOLS = {
-    "use": True,              # использовать пулы
-    "send_bnb": 0.0000055,       # how much to send bnb to the pool
-    "send_zeta": 0.001,     # how much to send zeta to the pool
+    "use": True,            # использовать пулы
+    "send_bnb": 0.0001,  # how much to send bnb to the pool
+    "send_bnb_offset": 0.00003,
+    "send_zeta": 0.002,     # how much to send zeta to the pool
+    # to make zeta random from [send_zeta- offset, send_zeta + offset] to zeta-bnb pool,
+    "offset":  0.0005,
     # range pool
-    "stzeta": 0.001  #должно быть меньше zeta_to_stzeta и zeta_to_wzeta с EDDY_SWAP
+    # must be less than zeta_to_stzeta and zeta_to_wzeta with EDDY_SWAP
+    "stzeta": 0.001  
 }
-# POOLS = {
-#     "send_bnb": 0.0001,       # сколько отправлять бнб в пул
-#     "send_zeta": 0.0001,      # сколько отправлять zeta в пул
 
-#     # range pool
-#     "stzeta": 0.001  #должно быть меньше zeta_to_stzeta и zeta_to_wzeta с EDDY_SWAP
-# }
-
-# APPROVES = {
-#     "bnb_approve": 0.03 # number of bnb for approval
-# }
 APPROVES = {
-    "bnb_approve": 0.03,  # кол-во бнб для апрува
+    "bnb_approve": 0.2,  # кол-во бнб для апрува
     "stzeta_approve": 0.25,  # кол-во stzeta для апрува
     "wzeta_approve": 0.25,   # кол-во wzeta для апрува
+    #approve random from [approve - offset, approve + offset]
+    "offset": 0.05, 
     "stzeta_accumulated_approve": 0.3
 }
 
 # swap on app.eddy.finance
 # so can add liqility on range
 EDDY_SWAP = {
+    "zeta_offset": 0.0002,
     "zeta_to_stzeta": 0.0013,  # кол-во zeta для свапа на stzeta
-    "zeta_to_wzeta": 0.0002,   # кол-во zeta для свапа на wzeta, можно не больше zeta_to_stzeta
+    "wzeta_offset": 0.0001,
+    "zeta_to_wzeta": 0.0005,   # number of zeta for swap on wzeta, no more than zeta_to_stzeta possible
 }
 
 # mint and stake on accumulated
 ACCUMULATED_FINANCE = {
     "zeta_to_stzeta": 0.0002,     # кол-во zeta для свапа на stzeta на accumulated finance
-    "stzeta_to_wstzeta": 0.0002  # кол-во stzeta для свапа на wstzeta на accumulated finance, должно быть не больше zeta_to_stzeta
+    "offset": 0.00001,
+    # number of stzeta for swap to wstzeta for accumulated finance, should not be more than zeta_to_stzeta
+    "stzeta_to_wstzeta": 0.00015  
 }
 
 FAST_MODE = True #set to true if you run the second time(to finish the task not completed in the 1st round) or want to quickly end

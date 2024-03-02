@@ -86,7 +86,7 @@ async def add_bnb_pool(zetachain,thread):
     # status, tx_hash = await zetachain.add_liquidity()
         status, tx_hash = await retry_function(zetachain.add_liquidity, thread)
         if status:
-            logger.success(f"Thread {thread} | Added liquidityzeta-bnb! {zetachain.web3_utils.acct.address}:{tx_hash}")
+            logger.success(f"Thread {thread} | Added liquidity zeta-bnb! {zetachain.web3_utils.acct.address}:{tx_hash}")
         else:
             logger.error(f"Thread {thread} | Cant Added liquidity zeta-bnb! {zetachain.web3_utils.acct.address}:{tx_hash}")
 
@@ -241,11 +241,10 @@ async def execute_graph(graph, zetachain, thread):
     for node in nodes:
         predecessors = [func for func in graph if node in graph[func]]
         if not predecessors:
+            # print(f"execute: {node}")
             await node(zetachain, thread)
             if node in graph:
                 del graph[node]
-            else:
-                print(f"{node} function 不存在，请检查")
             break
 
 async def ZC(thread):
@@ -288,12 +287,11 @@ async def ZC(thread):
         
         while DAG:
             await execute_graph(DAG, zetachain, thread)
-
         # marks completed quests
-        logger.info(f"Thread {thread} | wait 180s to claim xps...")
+        logger.info(f"Thread {thread} | wait xx s to claim xps...")
         # await asyncio.sleep(180)
         if not config.FAST_MODE:
-            await zetachain.sleep_random(120,180)
+            await zetachain.sleep_random(12,30)
         else:
             await zetachain.sleep_random(3,10)
     
