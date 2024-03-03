@@ -154,6 +154,9 @@ async def stake_on_accumulated(zetachain,thread):
         logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} had staked on accumulated before.")
 
 async def liquidity_on_range(zetachain,thread):
+    if not await zetachain.check_completed_task("RANGE_PROTOCOL_VAULT_TRANSACTION"):
+        logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} had add liquidity on range before... ")
+        return
     # approval stzeta 
     if float(await zetachain.allowance_stzeta())+0.1 < config.APPROVES['stzeta_approve']:
         status, tx_hash = await retry_function(zetachain.approve_stzeta, thread)
@@ -253,7 +256,7 @@ async def execute_graph(graph, zetachain, thread):
 
 async def ZC(thread):
     logger.info(f"Thread {thread} | Started work")
-    run_once = True
+    run_once = False
     while True:
         act = await random_line('data/accounts.txt')
         if not act: break
