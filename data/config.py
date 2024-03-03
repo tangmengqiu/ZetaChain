@@ -51,7 +51,7 @@ ACCUMULATED_FINANCE = {
     # number of stzeta for swap to wstzeta for accumulated finance, should not be more than zeta_to_stzeta
     "stzeta_to_wstzeta": 0.015  
 }
-FAST_MODE = True #set to true if you run the second time(to finish the task not completed in the 1st round) or want to quickly end
+FAST_MODE = False #set to true if you run the second time(to finish the task not completed in the 1st round) or want to quickly end
 # рпц
 RPCs = {
     "zetachain": "https://zetachain-evm.blockpi.network/v1/rpc/public"  # zetachain rpc

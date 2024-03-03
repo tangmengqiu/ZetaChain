@@ -1,3 +1,5 @@
 .accounts.txt
 .proxy.txt
 __pycache__/
+accounts-all.txt
+account*

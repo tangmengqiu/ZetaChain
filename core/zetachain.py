@@ -92,16 +92,20 @@ class ZetaChain:
 
     async def check_completed_task(self, task):
         for i in range(3):
-            resp = await self.session.get(f'https://xp.cl04.zetachain.com/v1/get-user-has-xp-to-refresh?address={self.web3_utils.acct.address}', proxy=self.proxy)
-            resp_json = await resp.json()
-            if resp.status == 200:
-                break 
-            else:
-                if i<2:
-                    logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address}: get-user-has-xp-to-refresh failed: {resp_json.get('message')}, will retry...")
+            try:
+                resp = await self.session.get(f'https://xp.cl04.zetachain.com/v1/get-user-has-xp-to-refresh?address={self.web3_utils.acct.address}', proxy=self.proxy)
+                resp_json = await resp.json()
+                if resp.status == 200:
+                    break 
                 else:
-                    logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address}: get-user-has-xp-to-refresh failed 3 times: {resp_json.get('message')}, will skip...")
-                    return False
+                    if i<2:
+                        logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address}: get-user-has-xp-to-refresh failed: {resp_json.get('message')}, will retry...")
+                    else:
+                        logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address}: get-user-has-xp-to-refresh failed 3 times: {resp_json.get('message')}, will skip...")
+                        return False
+            except aiohttp.ClientError as e:
+                print(f"Error fetching data: {e}")
+                return False
         # 这里总是出现异常
         return resp_json.get('xpRefreshTrackingByTask').get(task).get('hasXpToRefresh') is False and resp_json.get('xpRefreshTrackingByTask').get(task).get('hasAlreadyEarned') is False
 
@@ -292,8 +296,22 @@ class ZetaChain:
         return wait_tx.status == 1, transaction_hash
 
     async def claim_tasks(self):
-        resp = await self.session.get(f'https://xp.cl04.zetachain.com/v1/get-user-has-xp-to-refresh?address={self.web3_utils.acct.address}', proxy=self.proxy)
-        resp_json = await resp.json()
+        for i in range(3):
+            try:
+                resp = await self.session.get(f'https://xp.cl04.zetachain.com/v1/get-user-has-xp-to-refresh?address={self.web3_utils.acct.address}', proxy=self.proxy)
+                resp_json = await resp.json()
+                if resp.status == 200:
+                    break 
+                else:
+                    if i<2:
+                        logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address}: claim_tasks: get-user-has-xp-to-refresh failed: {resp_json.get('message')}, will retry...")
+                    else:
+                        logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address}: claim_tasks: get-user-has-xp-to-refresh failed 3 times: {resp_json.get('message')}, will skip...")
+                        return 
+            except aiohttp.ClientError as e:
+                print(f"Error fetching claim_tasks data: {e}") 
+        # resp = await self.session.get(f'https://xp.cl04.zetachain.com/v1/get-user-has-xp-to-refresh?address={self.web3_utils.acct.address}', proxy=self.proxy)
+        # resp_json = await resp.json()
 
         tasks_for_claim = [key for key, value in resp_json["xpRefreshTrackingByTask"].items() if value["hasXpToRefresh"]]
         success = 0
@@ -304,21 +322,24 @@ class ZetaChain:
                 "signedMessage": self.web3_utils.get_signed_code_struct({"types": {"Message": [{"name": "content", "type": "string"}],"EIP712Domain": [{"name": "name", "type": "string"},{"name": "version", "type": "string"},{"name": "chainId", "type": "uint256"},],},"domain": {"name": "Hub/XP", "version": "1", "chainId": 7000},"primaryType": "Message","message": {"content": "Claim XP"},}),
             }
             for i in range(3):
-                resp = await self.session.post('https://xp.cl04.zetachain.com/v1/xp/claim-task', json=claim_data, proxy=self.proxy)
-                if resp.status != 200:
-                    continue
-                res = await resp.json()
-                if res.get('message') == 'XP refreshed successfully':
-                    success += 1
-                    logger.success(f"Thread {self.thread} | {self.web3_utils.acct.address} XP of {task} claimed successfully")
-                    break
-                else:
-                    if i<2 :
-                        logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address} XP of {task} failed due to: {res.get('message')}, will retry...")
-                        await asyncio.sleep(2)    
+                try:
+                    resp = await self.session.post('https://xp.cl04.zetachain.com/v1/xp/claim-task', json=claim_data, proxy=self.proxy)
+                    if resp.status != 200:
+                        continue
+                    res = await resp.json()
+                    if res.get('message') == 'XP refreshed successfully':
+                        success += 1
+                        logger.success(f"Thread {self.thread} | {self.web3_utils.acct.address} XP of {task} claimed successfully")
+                        break
                     else:
-                        logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address} XP of {task} failed 3 times: {res.get('message')}, skip!!!")
-            await asyncio.sleep(5)
+                        if i<2 :
+                            logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address} XP of {task} failed due to: {res.get('message')}, will retry...")
+                            await self.sleep_random(5,8)    
+                        else:
+                            logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address} XP of {task} failed 3 times: {res.get('message')}, skip!!!")
+                except aiohttp.ClientError as e:
+                    print(f"Error fetching XP refreshed data: {e}") 
+            await self.sleep_random(3,8)
             
 
         return success

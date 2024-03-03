@@ -245,10 +245,15 @@ async def execute_graph(graph, zetachain, thread):
             await node(zetachain, thread)
             if node in graph:
                 del graph[node]
+            if not config.FAST_MODE:
+                await zetachain.sleep_random(20,30)
+            else:
+                await zetachain.sleep_random(3,10)
             break
 
 async def ZC(thread):
     logger.info(f"Thread {thread} | Started work")
+    run_once = True
     while True:
         act = await random_line('data/accounts.txt')
         if not act: break
@@ -303,6 +308,8 @@ async def ZC(thread):
 
         await zetachain.logout()
         await zetachain.sleep(config.DELAY['account'], logger, thread)
+        if run_once:
+            break
 
     logger.info(f"Thread {thread} | Finished work")
 
