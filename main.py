@@ -55,6 +55,9 @@ async def swap_bnb(zetachain,thread):
 
 async def add_bnb_pool(zetachain,thread):
     # approval bnb
+    if not await zetachain.check_completed_task("POOL_DEPOSIT_ANY_POOL"):
+        logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} do not need to add bnb pool, task completed already.")
+        return
     if float(await zetachain.check_approve_bnb())+0.001 < config.APPROVES['bnb_approve']:
         # status, tx_hash = await zetachain.approve_bnb()
         status, tx_hash = await retry_function(zetachain.approve_bnb, thread)
