@@ -128,7 +128,11 @@ class ZetaChain:
             "data": data,
         }
 
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
         tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
 
         tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
         transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
@@ -144,11 +148,15 @@ class ZetaChain:
             "to": self.web3_utils.acct.address,
             "value": self.web3_utils.w3.to_wei(value, "ether"),
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
-            "gasPrice": self.web3_utils.w3.eth.gas_price,
+            # "gasPrice": self.web3_utils.w3.eth.gas_price,
             "chainId": 7000,
         }
 
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
         tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
 
         tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
         transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
@@ -180,11 +188,15 @@ class ZetaChain:
             "to": self.web3_utils.w3.to_checksum_address(IZUMI_SWAP_CONTRACT),
             "value": self.web3_utils.w3.to_wei(value, "ether"),
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
-            "gasPrice": self.web3_utils.w3.eth.gas_price,
+            # "gasPrice": self.web3_utils.w3.eth.gas_price,
             "chainId": 7000,
             "data": tx_data,
         }
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
         tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
         tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
         transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
 
@@ -213,11 +225,15 @@ class ZetaChain:
             "to": self.web3_utils.w3.to_checksum_address(IZUMI_SWAP_CONTRACT),
             "value": self.web3_utils.w3.to_wei(value, "ether"),
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
-            "gasPrice": self.web3_utils.w3.eth.gas_price,
+            # "gasPrice": self.web3_utils.w3.eth.gas_price,
             "chainId": 7000,
             "data": tx_data,
         }
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
         tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
 
         tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
         transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
@@ -247,11 +263,15 @@ class ZetaChain:
             "to": self.web3_utils.w3.to_checksum_address(IZUMI_SWAP_CONTRACT),
             "value": self.web3_utils.w3.to_wei(value, "ether"),
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
-            "gasPrice": self.web3_utils.w3.eth.gas_price,
+            # "gasPrice": self.web3_utils.w3.eth.gas_price,
             "chainId": 7000,
             "data": tx_data,
         }
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
         tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
 
         tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
         transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
@@ -266,7 +286,7 @@ class ZetaChain:
         )
         value = self.random_float_precision(config.POOLS['send_zeta'],config.POOLS['offset'],3)
         bnb_value =  self.random_float_precision(config.POOLS['send_bnb'],config.POOLS['send_bnb_offset'],5)
-        logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to add_liquidity: {value} zeta (random as value) and {bnb_value} (random) bnb")
+        logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to add_liquidity: {value} zeta  and {bnb_value} bnb")
 
         value = self.web3_utils.w3.to_wei(value, "ether")
         # logger.info(f"thread: {self.thread}: add_liquidity value(wei): {value} " )
@@ -282,12 +302,16 @@ class ZetaChain:
                 "from": self.web3_utils.acct.address,
                 "value": value,
                 "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
-                "gasPrice": self.web3_utils.w3.eth.gas_price,
+                # "gasPrice": self.web3_utils.w3.eth.gas_price,
                 "chainId": 7000,
             }
         )
 
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
         tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
 
         tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
         transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
@@ -339,7 +363,7 @@ class ZetaChain:
                             logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address} XP of {task} failed 3 times: {res.get('message')}, skip!!!")
                 except aiohttp.ClientError as e:
                     print(f"Error fetching XP refreshed data: {e}") 
-            await self.sleep_random(3,8)
+            await self.sleep_random(3,10)
             
 
         return success
@@ -391,11 +415,15 @@ class ZetaChain:
             "to": self.web3_utils.w3.to_checksum_address("0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf"),
             "value": self.web3_utils.w3.to_wei(value, "ether"),
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
-            "gasPrice": self.web3_utils.w3.eth.gas_price,
+            # "gasPrice": self.web3_utils.w3.eth.gas_price,
             "chainId": 7000,
             "data": "0xd0e30db0",
         }
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
         tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
         logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to swap: {value} zeta to wzeta")
         tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
         transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
@@ -449,11 +477,15 @@ class ZetaChain:
             "to": self.web3_utils.w3.to_checksum_address("0x08F4539f91faA96b34323c11C9B00123bA19eef3"),
             "value": 0,
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
-            "gasPrice": self.web3_utils.w3.eth.gas_price,
+            # "gasPrice": self.web3_utils.w3.eth.gas_price,
             "chainId": 7000,
             "data": self.generate_data_range(stzeta_amount, wzeta_amount, mint_amount),
         }
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
         tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
 
         tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
         transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
@@ -468,11 +500,15 @@ class ZetaChain:
             "to": self.web3_utils.w3.to_checksum_address("0xcf1A40eFf1A4d4c56DC4042A1aE93013d13C3217"),
             "value": self.web3_utils.w3.to_wei(value, 'ether'),
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
-            "gasPrice": self.web3_utils.w3.eth.gas_price,
+            # "gasPrice": self.web3_utils.w3.eth.gas_price,
             "chainId": 7000,
             "data": f"0xf340fa01000000000000000000000000{self.web3_utils.acct.address[2:]}",
         }
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
         tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
         logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to swap: {value} zeta to stzeta")
         tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
         transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
@@ -505,14 +541,168 @@ class ZetaChain:
             "to": self.web3_utils.w3.to_checksum_address("0x7AC168c81F4F3820Fa3F22603ce5864D6aB3C547"),
             "value": 0,
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
-            "gasPrice": self.web3_utils.w3.eth.gas_price,
+            # "gasPrice": self.web3_utils.w3.eth.gas_price,
             "chainId": 7000,
             "data": data,
         }
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
         tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
         logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to stake: {value} stzeta")
         tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
         transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
 
         wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
         return wait_tx.status == 1, transaction_hash
+    
+    async def stake_on_zetachain(self):
+        value = self.random_float_precision(config.STAKE_ZETACHAIN['zeta_count'],config.STAKE_ZETACHAIN['offset'],5)
+        logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to stake: {value} on zetaeran")
+        tx = {
+            "from": self.web3_utils.acct.address,
+            "to": self.web3_utils.w3.to_checksum_address("0x45334a5B0a01cE6C260f2B570EC941C680EA62c0"),
+            "value": self.web3_utils.w3.to_wei(value, 'ether'),
+            "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
+            # "gasPrice": self.web3_utils.w3.eth.gas_price,
+            "chainId": 7000,
+            "data": "0x5bcb2fc6",
+        }
+
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
+        tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
+
+        tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
+        transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
+
+        wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
+        return wait_tx.status == 1, transaction_hash
+
+    async def approve_zetaswap_wzeta(self):
+        spender = "0xc6f7a7ba5388bfb5774bfaa87d350b7793fd9ef1"
+        contract = "0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf"
+        random_value = round(random.uniform(config.APPROVES['zetaswap_wzeta_approve'][0], config.APPROVES['zetaswap_wzeta_approve'][1]), 10)
+        return self.web3_utils.approve(spender, random_value, abi.approve_abi, contract)
+
+    async def allowance_zetaswap_wzeta(self):
+        return self.web3_utils.allowance(spender="0xc6f7a7ba5388bfb5774bfaa87d350b7793fd9ef1", contract="0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf", abi=abi.approve_abi)
+
+    async def zetaswap_wzeta_to_eth(self):
+        headers = {"apiKey": config.NATIVE_API_KEY}
+        random_value = round(random.uniform(config.ZETASWAP['wzeta_count'][0], config.ZETASWAP['wzeta_count'][1]), 4)
+
+        params = {
+            "chain": "zetachain",
+            "token_in": "0x5F0b1a82749cb4E2278EC87F8BF6B618dC71a8bf",
+            "token_out": "0xd97b1de3619ed2c6beb3860147e30ca8a7dc9891",
+            "amount": random_value,
+            "from_address": self.web3_utils.acct.address
+        }
+
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.get('https://newapi.native.org/v1/firm-quote', params=params) as resp:
+                resp_json = await resp.json()
+                to = resp_json.get('txRequest').get('target')
+                data = resp_json.get('txRequest').get('calldata')
+
+        tx = {
+            "from": self.web3_utils.acct.address,
+            "to": self.web3_utils.w3.to_checksum_address(to),
+            "value": 0,
+            "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
+            # "gasPrice": self.web3_utils.w3.eth.gas_price,
+            "chainId": 7000,
+            "data": data,
+        }
+
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
+        tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
+
+        tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
+        transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
+
+        wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
+        return wait_tx.status == 1, transaction_hash
+
+    async def min_ultiverse_badge(self):
+            headers = {
+                "Accept": "application/json, text/plain, */*",
+                "Content-Type": "application/json",
+                "Origin": "https://mission.ultiverse.io",
+                "Referer": "https://mission.ultiverse.io/",
+                "Ul-Auth-Api-Key": "bWlzc2lvbl9ydW5uZXJAZFd4MGFYWmxjbk5s",
+                "User-Agent": UserAgent(os='windows').random
+            }
+
+            session = aiohttp.ClientSession(headers=headers, cookie_jar=aiohttp.CookieJar())
+
+            json_data = {"address":self.web3_utils.acct.address, "feature":"assets-wallet-login", "chainId":7000}
+            resp = await session.post("https://account-api.ultiverse.io/api/user/signature", json=json_data, proxy=self.proxy)
+
+            json_data = {
+                "address": self.web3_utils.acct.address,
+                "signature": self.web3_utils.get_signed_code((await resp.json()).get('data').get("message")),
+                "chainId": 7000
+            }
+            resp = await session.post("https://account-api.ultiverse.io/api/wallets/signin", json=json_data, proxy=self.proxy)
+
+            session.cookie_jar.update_cookies(resp.cookies)
+            session.headers['Ul-Auth-Api-Key'] = (await resp.json()).get('data').get("access_token")
+            session.headers['Referer'] = "https://mission.ultiverse.io/t/ZmluZHBhdGh8MTcwNjg2MDczMTkzMQ=="
+
+            json_data = {
+                "eventId": 10,
+                "address": self.web3_utils.acct.address,
+            }
+
+            resp = await session.post("https://mission.ultiverse.io/api/tickets/mint", json=json_data, proxy=self.proxy)
+            resp_json = (await resp.json()).get("data")
+            await session.close()
+
+            expire_at = resp_json.get("expireAt")
+            token_id = resp_json.get("tokenId")
+            event_id = resp_json.get("eventId")
+            signature = resp_json.get("signature")
+
+            contract = self.web3_utils.w3.eth.contract(address=resp_json.get('contract'), abi=abi.ultiverse_abi)
+
+            tx = contract.functions.buy(expire_at, token_id, event_id, signature).build_transaction(
+                {
+                    "from": self.web3_utils.acct.address,
+                    # "value": self.web3_utils.w3.to_wei(config.POOLS['send_zeta'], "ether"),
+                    "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
+                    # "gasPrice": self.web3_utils.w3.eth.gas_price,
+                    "chainId": 7000,
+                }
+            )
+
+            max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
+            max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
+            tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+            tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+            tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
+            tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+            tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
+
+            tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
+            transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
+            wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
+
+            return wait_tx.status == 1, transaction_hash

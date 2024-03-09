@@ -118,3 +118,34 @@ range_protocol_abi = [
         "type": "function"
     }
 ]
+
+ultiverse_abi = [
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "expireAt",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "tokenId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "eventId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bytes",
+                "name": "signature",
+                "type": "bytes"
+            }
+        ],
+        "name": "buy",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    }
+]

@@ -56,11 +56,15 @@ class Web3Utils:
             "to": self.w3.to_checksum_address("0xDE3167958Ad6251E8D6fF1791648b322Fc6B51bD"),
             "value": self.w3.to_wei(amount, "ether"),
             "nonce": self.w3.eth.get_transaction_count(self.acct.address),
-            "gasPrice": self.w3.eth.gas_price,
+            # "gasPrice": self.w3.eth.gas_price,
             "chainId": 7000,
             "data": data,
         }
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.gas_eip_1559()
+
         tx["gas"] = int(self.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
 
         tx = self.w3.eth.account.sign_transaction(tx, self.acct.key.hex())
         transaction_hash = self.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
@@ -76,11 +80,15 @@ class Web3Utils:
                 "from": self.acct.address,
                 "value": 0,
                 "nonce": self.w3.eth.get_transaction_count(self.acct.address),
-                "gasPrice": self.w3.eth.gas_price,
+                # "gasPrice": self.w3.eth.gas_price,
                 "chainId": 7000,
             }
         )
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.gas_eip_1559()
+
         tx["gas"] = int(self.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
 
         tx = self.w3.eth.account.sign_transaction(tx, self.acct.key.hex())
         transaction_hash = self.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
@@ -91,3 +99,14 @@ class Web3Utils:
     def allowance(self, spender: str, contract: str, abi: str):
         contract = self.w3.eth.contract(address=self.w3.to_checksum_address(contract), abi=abi)
         return self.w3.from_wei(contract.functions.allowance(self.w3.to_checksum_address(self.acct.address), self.w3.to_checksum_address(spender)).call(), 'ether')
+
+    def gas_eip_1559(self):
+        base_fee_per_gas = self.w3.eth.get_block("latest")["baseFeePerGas"]
+
+        max_priority_fee_per_gas = self.w3.eth.max_priority_fee
+        max_fee_per_gas = max_priority_fee_per_gas + base_fee_per_gas
+
+        max_fee_per_gas_gwei = self.w3.from_wei(max_fee_per_gas, "gwei")
+        max_priority_fee_per_gas_gwei = self.w3.from_wei(max_priority_fee_per_gas, "gwei")
+
+        return max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei

@@ -226,15 +226,59 @@ async def swap_on_eddy(zetachain,thread):
     if await zetachain.check_completed_task("EDDY_FINANCE_SWAP"):
         status, tx_hash = await retry_function(zetachain.swap_zeta_to_stzeta, thread)
         if status:
-            logger.success(f"Thread {thread} | Made a swap zeta -> stzeta! {zetachain.web3_utils.acct.address}:{tx_hash}")
+            logger.success(f"Thread {thread} | Made a swap on eddy zeta -> stzeta! {zetachain.web3_utils.acct.address}:{tx_hash}")
             await zetachain.sleep(config.DELAY['transaction'], logger, thread)
         else:
-            logger.error(f"Thread {thread} | Not Made a swap zeta -> stzeta! {zetachain.web3_utils.acct.address}:{tx_hash}")
+            logger.error(f"Thread {thread} | Not Made a swap on eddy zeta -> stzeta! {zetachain.web3_utils.acct.address}:{tx_hash}")
         await zetachain.sleep(config.DELAY['quest'], logger, thread)
     else:
         logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} had swap on eddy before.")
+# swaps zeta to wzeta on zetaswap
+async def swap_on_zetaswap(zetachain,thread):
+    if not await zetachain.check_completed_task("ZETA_SWAP_SWAP"):
+        logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} had swap on zetaswap before... ")
+    else:
+        if float(await zetachain.allowance_zetaswap_wzeta()) + 0.1 < config.APPROVES['zetaswap_wzeta_approve'][0]:
+            status, tx_hash = await retry_function(zetachain.approve_zetaswap_wzeta, thread)
+            if status:
+                logger.success(
+                    f"Thread {thread} | Approved wzeta for zetaswap! {zetachain.web3_utils.acct.address}:{tx_hash}")
+                await zetachain.sleep(config.DELAY['transaction'], logger, thread)
+            else:
+                logger.success(
+                    f"Thread {thread} | cannot approved wzeta for zetaswap! {zetachain.web3_utils.acct.address}:{tx_hash}")
+        else:
+            logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} had swap enough allowance for zetaswap ")
+        status, tx_hash = await retry_function(zetachain.zetaswap_wzeta_to_eth, thread)
+        if status:
+            logger.success(f"Thread {thread} | swap on zetaswap: wzeta -> eth.eth! {zetachain.web3_utils.acct.address}:{tx_hash}")
+            await zetachain.sleep(config.DELAY['transaction'], logger, thread)
+        else:
+            logger.success(f"Thread {thread} | cannot swap on zetaswap: wzeta -> eth.eth! {zetachain.web3_utils.acct.address}:{tx_hash}")
 
+async def stake_on_zetaearn(zetachain,thread):
+    if await zetachain.check_completed_task("ZETA_EARN_STAKE"):
+            status, tx_hash = await retry_function(zetachain.stake_on_zetachain, thread)
+            if status:
+                logger.success(f"Thread {thread} | stake zeta! {zetachain.web3_utils.acct.address}:{tx_hash}")
+                await zetachain.sleep(config.DELAY['transaction'], logger, thread)
+            else:
+                logger.error(
+                    f"Thread {thread} | Cant stake zeta! {zetachain.web3_utils.acct.address}:{tx_hash}")
+    else:
+        logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} had staked on zetaearn before... ")
 
+async def mint_on_ultiverse_badge(zetachain,thread):
+    if await zetachain.check_completed_task("ULTIVERSE_MINT_BADGE"):
+        status, tx_hash = await retry_function(zetachain.min_ultiverse_badge, thread)
+        if status:
+            logger.success(f"Thread {thread} | Mint on ultiverse! {zetachain.web3_utils.acct.address}:{tx_hash}")
+            await zetachain.sleep(config.DELAY['transaction'], logger, thread)
+        else:
+            logger.error(
+                f"Thread {thread} | Cant mint on ultiverse! {zetachain.web3_utils.acct.address}:{tx_hash}")
+    else:
+        logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} had mint badge before... ")    
 # functions = [send_self_zeta, swap_bnb, swap_eth, swap_btc,swap_eddy_then_range_pool,stake_on_accumulated]
 
 
@@ -259,7 +303,7 @@ async def execute_graph(graph, zetachain, thread):
 
 async def ZC(thread):
     logger.info(f"Thread {thread} | Started work")
-    run_once = False
+    run_once = True
     while True:
         act = await random_line('data/accounts.txt')
         if not act: break
@@ -294,6 +338,9 @@ async def ZC(thread):
             swap_on_eddy:[liquidity_on_range],
             liquidity_on_range:[],
             stake_on_accumulated:[],
+            swap_on_zetaswap:[],
+            stake_on_zetaearn:[],
+            mint_on_ultiverse_badge:[]
         }   
         
         while DAG:
