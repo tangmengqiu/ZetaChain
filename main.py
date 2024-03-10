@@ -245,7 +245,7 @@ async def swap_on_zetaswap(zetachain,thread):
                     f"Thread {thread} | Approved wzeta for zetaswap! {zetachain.web3_utils.acct.address}:{tx_hash}")
                 await zetachain.sleep(config.DELAY['transaction'], logger, thread)
             else:
-                logger.success(
+                logger.error(
                     f"Thread {thread} | cannot approved wzeta for zetaswap! {zetachain.web3_utils.acct.address}:{tx_hash}")
         else:
             logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} had swap enough allowance for zetaswap ")
@@ -254,7 +254,7 @@ async def swap_on_zetaswap(zetachain,thread):
             logger.success(f"Thread {thread} | swap on zetaswap: wzeta -> eth.eth! {zetachain.web3_utils.acct.address}:{tx_hash}")
             await zetachain.sleep(config.DELAY['transaction'], logger, thread)
         else:
-            logger.success(f"Thread {thread} | cannot swap on zetaswap: wzeta -> eth.eth! {zetachain.web3_utils.acct.address}:{tx_hash}")
+            logger.error(f"Thread {thread} | cannot swap on zetaswap: wzeta -> eth.eth! {zetachain.web3_utils.acct.address}:{tx_hash}")
 
 async def stake_on_zetaearn(zetachain,thread):
     if await zetachain.check_completed_task("ZETA_EARN_STAKE"):
