@@ -459,19 +459,19 @@ class ZetaChain:
 
     async def mint_amount(self):
         contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address("0x08f4539f91faa96b34323c11c9b00123ba19eef3"), abi=abi.range_protocol_abi)
-        percent = await self.get_price_range()
+        # percent = await self.get_price_range()
 
         token_x = self.web3_utils.w3.to_wei(config.POOLS['stzeta'], 'ether')
-        token_y = self.web3_utils.w3.to_wei(config.POOLS['stzeta']/percent, 'ether')
-        logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to add_liquidity_range: {config.POOLS['stzeta']} stzeta + {config.POOLS['stzeta']/percent} wzeta")
+        token_y = self.web3_utils.w3.to_wei(config.POOLS['stzeta'], 'ether')
         return contract.functions.getMintAmounts(int(token_x), int(token_y)).call()
 
     async def add_liquidity_range(self):
         stzeta_amount, wzeta_amount, mint_amount = await self.mint_amount()
-
+        print(f"add_liquidity_range stzeta_amount: {stzeta_amount}, wzeta_amount: {wzeta_amount}, mint_amount: {mint_amount}")
         # print(stzeta_amount, wzeta_amount, mint_amount)
         # print(f"ztzeta: {stzeta_amount}({stzeta_amount/1e18}), wzeta: {wzeta_amount}({wzeta_amount/1e18}), mint amount: {mint_amount}({mint_amount/1e18})")
-
+        data = self.generate_data_range(stzeta_amount, wzeta_amount, mint_amount)
+        print(f"add_liquidity_range data: {data}")
         tx = {
             "from": self.web3_utils.acct.address,
             "to": self.web3_utils.w3.to_checksum_address("0x08F4539f91faA96b34323c11C9B00123bA19eef3"),
@@ -479,7 +479,7 @@ class ZetaChain:
             "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
             # "gasPrice": self.web3_utils.w3.eth.gas_price,
             "chainId": 7000,
-            "data": self.generate_data_range(stzeta_amount, wzeta_amount, mint_amount),
+            "data": data,
         }
         max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
 
@@ -492,6 +492,7 @@ class ZetaChain:
 
         wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
         return wait_tx.status == 1, transaction_hash
+    
     # mint stzeta on accumulate
     async def swap_zeta_to_stzeta_accumulated_finance(self):
         value = self.random_float_precision(config.ACCUMULATED_FINANCE['zeta_to_stzeta'],config.ACCUMULATED_FINANCE['offset'],3)
@@ -664,9 +665,9 @@ class ZetaChain:
             session.cookie_jar.update_cookies(resp.cookies)
             session.headers['Ul-Auth-Api-Key'] = (await resp.json()).get('data').get("access_token")
             session.headers['Referer'] = "https://mission.ultiverse.io/t/ZmluZHBhdGh8MTcwNjg2MDczMTkzMQ=="
-
+            id = random.randint(11,20)
             json_data = {
-                "eventId": 10,
+                "eventId": id,
                 "address": self.web3_utils.acct.address,
             }
 
