@@ -467,11 +467,11 @@ class ZetaChain:
 
     async def add_liquidity_range(self):
         stzeta_amount, wzeta_amount, mint_amount = await self.mint_amount()
-        print(f"add_liquidity_range stzeta_amount: {stzeta_amount}, wzeta_amount: {wzeta_amount}, mint_amount: {mint_amount}")
+        # print(f"add_liquidity_range stzeta_amount: {stzeta_amount}, wzeta_amount: {wzeta_amount}, mint_amount: {mint_amount}")
         # print(stzeta_amount, wzeta_amount, mint_amount)
         # print(f"ztzeta: {stzeta_amount}({stzeta_amount/1e18}), wzeta: {wzeta_amount}({wzeta_amount/1e18}), mint amount: {mint_amount}({mint_amount/1e18})")
         data = self.generate_data_range(stzeta_amount, wzeta_amount, mint_amount)
-        print(f"add_liquidity_range data: {data}")
+        # print(f"add_liquidity_range data: {data}")
         tx = {
             "from": self.web3_utils.acct.address,
             "to": self.web3_utils.w3.to_checksum_address("0x08F4539f91faA96b34323c11C9B00123bA19eef3"),
