@@ -214,11 +214,11 @@ async def liquidity_on_range(zetachain,thread):
         status, tx_hash = await retry_function(zetachain.add_liquidity_range, thread)
         if status:
             logger.success(
-                f"Thread {thread} | Added liquidity stzeta-wzeta! {zetachain.web3_utils.acct.address}:{tx_hash}")
+                f"Thread {thread} | Added liquidity stzeta-wzeta on range! {zetachain.web3_utils.acct.address}:{tx_hash}")
             await zetachain.sleep(config.DELAY['transaction'], logger, thread)
         else:
             logger.error(
-                f"Thread {thread} | Cannot Added liquidity stzeta-wzeta! {zetachain.web3_utils.acct.address}:{tx_hash}")
+                f"Thread {thread} | Cannot Added liquidity stzeta-wzeta on range! {zetachain.web3_utils.acct.address}:{tx_hash}")
         await zetachain.sleep(config.DELAY['quest'], logger, thread)
 
 #  swaps zeta to stzeta on eddy finance
@@ -281,7 +281,15 @@ async def mint_on_ultiverse_badge(zetachain,thread):
         logger.info(f"Thread {thread} | {zetachain.web3_utils.acct.address} had mint badge before... ")    
 # functions = [send_self_zeta, swap_bnb, swap_eth, swap_btc,swap_eddy_then_range_pool,stake_on_accumulated]
 
-
+async def nativex_swap(zetachain,thread):
+      # свап zeta на btc через nativex
+        if await zetachain.check_completed_task("NATIVEX_SWAP"):
+            status, tx_hash = await retry_function(zetachain.nativex_zeta_to_btc, thread)
+            if status:
+                logger.success(f"Thread {thread} | Swap on NativeX finance: zeta -> btc! {zetachain.web3_utils.acct.address}:{tx_hash}")
+                await zetachain.sleep(config.DELAY['transaction'], logger, thread)
+            else:
+                logger.error(f"Thread {thread} | cant swap on NativeX finance: wzeta -> btc! {zetachain.web3_utils.acct.address}:{tx_hash}")
 
 
 async def execute_graph(graph, zetachain, thread):
@@ -296,14 +304,14 @@ async def execute_graph(graph, zetachain, thread):
             if node in graph:
                 del graph[node]
             if not config.FAST_MODE:
-                await zetachain.sleep_random(20,30)
+                await zetachain.sleep_random(30,60)
             else:
                 await zetachain.sleep_random(3,10)
             break
 
 async def ZC(thread):
     logger.info(f"Thread {thread} | Started work")
-    run_once = True
+    run_once = False
     while True:
         act = await random_line('data/accounts.txt')
         if not act: break
@@ -333,14 +341,19 @@ async def ZC(thread):
             send_self_zeta: [],
             swap_bnb: [add_bnb_pool],
             add_bnb_pool:[],
-            swap_eth:[],
-            swap_btc:[],
+            # swap_eth:[],
+            # swap_btc:[],
             swap_on_eddy:[liquidity_on_range],
             liquidity_on_range:[],
             stake_on_accumulated:[],
-            swap_on_zetaswap:[],
+            # swap_on_zetaswap wzeta -> eth, can replace swap_eth
+            swap_on_zetaswap:[],  
             stake_on_zetaearn:[],
-            mint_on_ultiverse_badge:[]
+            mint_on_ultiverse_badge:[],
+            # LEAGUE_OF_THRONES_STATE_CHANGED 10 moves
+            nativex_swap:[]
+            # NATIVEX_SWAP BTC.BTC <-> zeta, if zeta -> BTC.BTC
+            # can replace task swap_btc
         }   
         
         while DAG:
@@ -349,7 +362,7 @@ async def ZC(thread):
         logger.info(f"Thread {thread} | wait xx s to claim xps...")
         # await asyncio.sleep(180)
         if not config.FAST_MODE:
-            await zetachain.sleep_random(12,30)
+            await zetachain.sleep_random(20,30)
         else:
             await zetachain.sleep_random(3,10)
     

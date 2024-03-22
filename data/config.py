@@ -65,6 +65,10 @@ STAKE_ZETACHAIN= {
 ZETASWAP = {
     "wzeta_count": [0.0015, 0.0025]
 }
+# свап zeta на btc через nativeX
+NATIVEX = {
+    "zeta_count": [0.02, 0.03]
+}
 FAST_MODE = True #set to true if you run the second time(to finish the task not completed in the 1st round) or want to quickly end
 # рпц
 RPCs = {

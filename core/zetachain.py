@@ -409,7 +409,7 @@ class ZetaChain:
         return self.web3_utils.eddy_finance_swap(from_, to,value )
     # swap_zeta_to_wzeta on eddy
     async def swap_zeta_to_wzeta(self):
-        value  = self .random_float_precision(config.EDDY_SWAP['zeta_to_wzeta'],config.EDDY_SWAP['wzeta_offset'],3)
+        value  = self.random_float_precision(config.EDDY_SWAP['zeta_to_wzeta'],config.EDDY_SWAP['wzeta_offset'],3)
         tx = {
             "from": self.web3_utils.acct.address,
             "to": self.web3_utils.w3.to_checksum_address("0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf"),
@@ -460,9 +460,9 @@ class ZetaChain:
     async def mint_amount(self):
         contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address("0x08f4539f91faa96b34323c11c9b00123ba19eef3"), abi=abi.range_protocol_abi)
         # percent = await self.get_price_range()
-
-        token_x = self.web3_utils.w3.to_wei(config.POOLS['stzeta'], 'ether')
-        token_y = self.web3_utils.w3.to_wei(config.POOLS['stzeta'], 'ether')
+        value = self.random_float_precision(config.POOLS['stzeta'],config.EDDY_SWAP['zeta_offset'],4)
+        token_x = self.web3_utils.w3.to_wei(value, 'ether')
+        token_y = self.web3_utils.w3.to_wei(value, 'ether')
         return contract.functions.getMintAmounts(int(token_x), int(token_y)).call()
 
     async def add_liquidity_range(self):
@@ -654,7 +654,11 @@ class ZetaChain:
 
             json_data = {"address":self.web3_utils.acct.address, "feature":"assets-wallet-login", "chainId":7000}
             resp = await session.post("https://account-api.ultiverse.io/api/user/signature", json=json_data, proxy=self.proxy)
-
+            # print(f"min_ultiverse_badge, {resp.text}")
+            # resp_json = await resp.json()
+            # print(f"json: {resp_json}")
+            # msg= resp_json.get('data').get("message")
+            # print(f"message: {msg}")
             json_data = {
                 "address": self.web3_utils.acct.address,
                 "signature": self.web3_utils.get_signed_code((await resp.json()).get('data').get("message")),
@@ -665,7 +669,7 @@ class ZetaChain:
             session.cookie_jar.update_cookies(resp.cookies)
             session.headers['Ul-Auth-Api-Key'] = (await resp.json()).get('data').get("access_token")
             session.headers['Referer'] = "https://mission.ultiverse.io/t/ZmluZHBhdGh8MTcwNjg2MDczMTkzMQ=="
-            id = random.randint(11,20)
+            id = random.randint(17,20)
             json_data = {
                 "eventId": id,
                 "address": self.web3_utils.acct.address,
@@ -707,3 +711,59 @@ class ZetaChain:
             wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
 
             return wait_tx.status == 1, transaction_hash
+
+    async def nativex_zeta_to_btc(self):
+        headers = {"apiKey": config.NATIVE_API_KEY}
+        random_value = round(random.uniform(config.NATIVEX['zeta_count'][0], config.NATIVEX['zeta_count'][1]), 3)
+
+        params = {
+            "src_chain": "zetachain",
+            "dst_chain": "zetachain",
+            "token_in": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "token_out": "0x13a0c5930c028511dc02665e7285134b6d11a5f4",
+            "amount": random_value,
+            "address": self.web3_utils.acct.address,
+            "slippage": 0.5
+        }
+        to = ""
+        data = ""
+        for i in range(3):
+            try:
+                async with aiohttp.ClientSession(headers=headers) as session:
+                    async with session.get('https://newapi.native.org/v1/firm-quote', params=params) as resp:
+                        resp_json = await resp.json()
+                        if resp.status == 200:
+                            to = resp_json.get('txRequest').get('target')
+                            data = resp_json.get('txRequest').get('calldata')
+                            break 
+                        else:
+                            if i<2:
+                                logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address}: nativex_zeta_to_btc failed, will retry...")
+                            else:
+                                logger.error(f"Thread {self.thread} | {self.web3_utils.acct.address}: nativex_zeta_to_btc failed 3 times, will skip...")
+                                return 
+            except aiohttp.ClientError as e:
+                print(f"Error fetching data: {e}")
+                return 
+
+        tx = {
+            "from": self.web3_utils.acct.address,
+            "to": self.web3_utils.w3.to_checksum_address(to),
+            "value": 0,
+            "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
+            # "gasPrice": self.web3_utils.w3.eth.gas_price,
+            "chainId": 7000,
+            "data": data,
+        }
+
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
+        tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
+
+        tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
+        transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
+
+        wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
+        return wait_tx.status == 1, transaction_hash
