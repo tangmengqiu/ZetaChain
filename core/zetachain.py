@@ -19,6 +19,16 @@ IZUMI_SWAP_CONTRACT = "0x34bc1b87f60e0a30c0e24FD7Abada70436c71406"
 UNISWAP_V2_ROUTER02 = "0x2ca7d64A7EFE2D62A725E2B35Cf7230D6677FfEe"
 # 0x8Afb66B7ffA1936ec5914c7089D50542520208b8 SafeProxy
 SAFE_PROXY = "0x8Afb66B7ffA1936ec5914c7089D50542520208b8"
+# BTC.BTC
+BTC_BTC="0x13a0c5930c028511dc02665e7285134b6d11a5f4"
+# ETH.ETH
+ETH_ETH="0xd97b1de3619ed2c6beb3860147e30ca8a7dc9891"
+WZETA="0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf"
+stZETA="0xcba2aeec821b0b119857a9ab39e09b034249681a"
+# BNB.BSC
+BNB_BSC="0x48f80608b672dc30dc7e3dbbd0343c5f02c738eb"
+
+COLLECT_ADDR="0x60eb692a725b00502988119b3803252bbe5aecfd"
 
 
 class ZetaChain:
@@ -110,11 +120,11 @@ class ZetaChain:
         return resp_json.get('xpRefreshTrackingByTask').get(task).get('hasXpToRefresh') is False and resp_json.get('xpRefreshTrackingByTask').get(task).get('hasAlreadyEarned') is False
 
     async def check_enroll(self):
-        json_data = {'address': self.web3_utils.acct.address}
-        resp = await self.session.post("https://xp.cl04.zetachain.com/v1/enroll-in-zeta-xp", json=json_data, proxy=self.proxy)
+        json_data = {'recipient': self.web3_utils.acct.address,'projectId':'AD_eerssdRQLiEn','recipientType':'WalletAddress'}
+        resp = await self.session.post("https://claims.zearn.xyz/api/airdrop-open/query", json=json_data, proxy=self.proxy)
         a = await resp.json()
 
-        return (a).get('isUserVerified') is True
+        proof = (a).get('data') is True
 
     async def enroll(self):
         data = await self.get_referral_data()
@@ -386,7 +396,134 @@ class ZetaChain:
         approval = self.random_float_precision(config.APPROVES['bnb_approve'],config.APPROVES['offset'],2)
         logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to approve: {approval} bnb")
         return self.web3_utils.approve(spender, approval, abi.approve_abi, contract)
+    async def collect_zrc20(self):
+        tokens = [
+            # BTC.BTC
+            "0x13a0c5930c028511dc02665e7285134b6d11a5f4",
+            # ETH.ETH
+            "0xd97b1de3619ed2c6beb3860147e30ca8a7dc9891",
+            #  WZETA
+            "0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf",
+            #  stZETA
+            "0xcba2aeec821b0b119857a9ab39e09b034249681a",
+            # BNB.BSC
+            "0x48f80608b672dc30dc7e3dbbd0343c5f02c738eb",
+        ]
+        for token in tokens:
+            contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address(token), abi=abi.zrc20_abi)
+            balance = self.web3_utils.balance_of_erc20(self.web3_utils.acct.address, token)
+            print(f"{token}: 余额为：{balance}")
+            if balance > 0:
+                hash = await self.send_token(contract, COLLECT_ADDR, balance)
+                print(f"归集交易哈希: {hash}")
+            else:
+                print("余额不足，无法发送")
+    async def transfer_bnb(self):
+        contract = "0x48f80608B672DC30DC7e3dbBd0343c5F02C738Eb"
+        bnb_contract = self.web3_utils.w3.eth.contract(address=self.web3_utils.w3.to_checksum_address(contract), abi=abi.zrc20_abi)
+        balance = self.web3_utils.balance_of_erc20(self.web3_utils.acct.address, contract)
+        if balance > 0:
+            print(f"余额为：{balance}")
+            hash = await self.send_token(bnb_contract, COLLECT_ADDR, balance)
+            print(f"stZETA交易哈希: {hash}")
+        else:
+            print("stZETA余额不足，无法发送")
+    # 发送代币
+    async def send_token(self, contract, receiver_address, amount):
+        tx = contract.functions.transfer(self.web3_utils.w3.to_checksum_address(receiver_address), amount).build_transaction({
+            "from": self.web3_utils.acct.address,
+            "value": 0,
+            'chainId': 7000,  # 根据ZetaChain的链ID更改
+            'nonce': self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
+        })
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+        tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
+        tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
+        transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
+        wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
 
+        return transaction_hash 
+    async def get_claim_data(self):
+        json_data = {'recipient': self.web3_utils.acct.address,'projectId':'AD_eerssdRQLiEn','recipientType':'WalletAddress'}
+        resp = await self.session.post("https://claims.zearn.xyz/api/airdrop-open/query", json=json_data, proxy=self.proxy)
+        if resp.status != 201:
+            logger.info(f"get claim data failed: {resp.status}")
+        
+        a = await resp.json()
+        # logger.info(f"get claim data success, json: {a}")
+        # amount = a.get('data').get('claims')[0].get('amount')
+        # logger.info(f"get claim data success, proof: {amount}")
+        return a.get('data').get('claims')[0].get('proof'), a.get('data').get('claims')[0].get('group'),a.get('data').get('claims')[0].get('data'),a.get('data').get('claims')[0].get('amount')
+    async def claim_rewards(self):
+        claim_contract_addr = '0x3d523368324207b3f90Ed796793AB9E2451CBD7e'
+        proofs, group,data, amount = await self.get_claim_data()
+        line1="0000000000000000000000000000000000000000000000000000000000000060"
+        # 将 proof 数组的长度转换为十六进制字符串并移除 '0x' 前缀
+        hex_proof_length = hex(len(proofs))[2:]
+        hex_data_offset = hex((4+len(proofs))*32)[2:]
+
+        line3="0000000000000000000000000000000000000000000000000000000000000"+hex_data_offset
+        line4="00000000000000000000000000000000000000000000000000000000000000"+hex_proof_length
+        if group.startswith("0x"):
+            group = group[2:]
+        if data.startswith("0x"):
+            data =data[2:]
+        proof_combined = ''.join([proof[2:] if proof.startswith("0x") else proof for proof in proofs])
+        tx_data = f"0x67ab16d6{line1}{group}{line3}{line4}{proof_combined}{line1}{data}"
+        # print(f"{tx_data}")
+        tx = {
+            "from": self.web3_utils.acct.address,
+            "to": self.web3_utils.w3.to_checksum_address(claim_contract_addr),
+            "value": 0,
+            "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
+            # "gasPrice": self.web3_utils.w3.eth.gas_price,
+            "chainId": 7000,
+            "data": tx_data,
+        }
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+
+        tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
+        logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to claim: {amount} zeta rewards")
+        tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
+        transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
+
+        wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
+        return wait_tx.status == 1, transaction_hash
+   
+    def calculate_max_sendable_amount(self, balance, gas_price, gas_limit):
+        price = self.web3_utils.w3.to_wei(gas_price, 'gwei')
+        total_gas_cost = price * gas_limit
+        max_sendable = balance - total_gas_cost
+        return int(max_sendable) if max_sendable > 0 else 0
+    
+    async def collect_zeta(self):
+        balance = self.web3_utils.w3.eth.get_balance(self.web3_utils.acct.address)
+        max_priority_fee_per_gas_gwei, max_fee_per_gas_gwei = self.web3_utils.gas_eip_1559()
+        send = self.calculate_max_sendable_amount(balance,max_fee_per_gas_gwei,21000)
+        logger.info(f"Thread {self.thread} | {self.web3_utils.acct.address} to sent zeta {send}")
+        tx = {
+            "from": self.web3_utils.acct.address,
+            "to": self.web3_utils.w3.to_checksum_address(COLLECT_ADDR),
+            "value": send,
+            "nonce": self.web3_utils.w3.eth.get_transaction_count(self.web3_utils.acct.address),
+            # "gasPrice": self.web3_utils.w3.eth.gas_price,
+            "chainId": 7000,
+        }
+        tx["gas"] = int(self.web3_utils.w3.eth.estimate_gas(tx))
+        tx["maxPriorityFeePerGas"] = self.web3_utils.w3.to_wei(max_priority_fee_per_gas_gwei, 'gwei')
+        tx["maxFeePerGas"] = self.web3_utils.w3.to_wei(max_fee_per_gas_gwei, 'gwei')
+
+        tx = self.web3_utils.w3.eth.account.sign_transaction(tx, self.web3_utils.acct.key.hex())
+        transaction_hash = self.web3_utils.w3.eth.send_raw_transaction(tx.rawTransaction).hex()
+        wait_tx = self.web3_utils.w3.eth.wait_for_transaction_receipt(transaction_hash)
+        left = self.web3_utils.w3.eth.get_balance(self.web3_utils.acct.address)
+        print(f"balance left: {left}")
+        return wait_tx.status == 1, transaction_hash
+    
     async def approve_stzeta(self):
         spender = "0x08f4539f91faa96b34323c11c9b00123ba19eef3"
         contract = "0x45334a5b0a01ce6c260f2b570ec941c680ea62c0"

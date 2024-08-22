@@ -16,7 +16,7 @@ pool_abi = [
         "constant": False,
     }
 ]
-#  ZRC20_BNB_ADDR
+#  ZRC20_abi
 approve_abi = [
     {
         "type": "function",
@@ -41,7 +41,47 @@ approve_abi = [
      "payable": False,
      "stateMutability": "view",
      "type": "function"},
+]
 
+zrc20_abi =[
+     {
+        "constant": False,
+        "inputs": [
+            {
+                "name": "_to",
+                "type": "address"
+            },
+            {
+                "name": "_value",
+                "type": "uint256"
+            }
+        ],
+        "name": "transfer",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "constant": True,
+        "inputs": [
+            {
+                "name": "_owner",
+                "type": "address"
+            }
+        ],
+        "name": "balanceOf",
+        "outputs": [
+            {
+                "name": "balance",
+                "type": "uint256"
+            }
+        ],
+        "type": "function"
+    }
 ]
 
 # SAFE_PROXY
